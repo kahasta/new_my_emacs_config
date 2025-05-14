@@ -1,0 +1,1307 @@
+#+TITLE: My Emacs config
+#+AUTHOR: kahasta
+#+DESCRIPTION: my personal emacs config
+#+STARTUP: showeverything
+#+OPTIONS: toc:2
+
+* TABLE OF CONTENTS :toc:
+- [[#first-load][First load]]
+  - [[#adding-the-modules-directory-to-path][Adding the modules directory to path]]
+  - [[#plug-modules][Plug modules]]
+  - [[#init][Init]]
+  - [[#load-evil-mode][Load Evil Mode]]
+  - [[#my-functions][My functions]]
+  - [[#general-keybindings][General Keybindings]]
+- [[#ace-window][ACE-WINDOW]]
+- [[#aggressive-indent][AGGRESSIVE-INDENT]]
+- [[#app-launcher][APP LAUNCHER]]
+  - [[#app-launcher-1][App-Launcher]]
+- [[#all-the-icons][ALL THE ICONS]]
+- [[#avy][AVY]]
+- [[#backup--trash-files][BACKUP & TRASH FILES]]
+- [[#buffermove][BUFFERMOVE]]
+- [[#centaur-tabs][CENTAUR-TABS]]
+- [[#configuration-for-files][CONFIGURATION FOR FILES]]
+- [[#dashboard][DASHBOARD]]
+- [[#dired][DIRED]]
+- [[#diminish][DIMINISH]]
+- [[#expand-region][EXPAND-REGION]]
+- [[#extension-emacs-utils][EXTENSION EMACS UTILS]]
+- [[#eglot][EGLOT]]
+- [[#eldoc-box-helpful-embark][ELDOC-BOX HELPFUL EMBARK]]
+- [[#flycheck][FLYCHECK]]
+- [[#flymake][FLYMAKE]]
+- [[#fonts][FONTS]]
+  - [[#zooming-inout][Zooming In/Out]]
+- [[#format-all][FORMAT-ALL]]
+- [[#ui-settings-and-tweaks][UI SETTINGS AND TWEAKS]]
+  - [[#disable-menubar-toolbars-and-scrollbars][Disable Menubar, Toolbars and Scrollbars]]
+  - [[#display-line-nums-and-truncated-lines][Display Line Nums and Truncated Lines]]
+- [[#language-support][LANGUAGE SUPPORT]]
+  - [[#cc][C/C++]]
+  - [[#lua][lua]]
+  - [[#rust][rust]]
+  - [[#flutter][flutter]]
+- [[#marginalia][MARGINALIA]]
+- [[#org-mode][ORG MODE]]
+  - [[#define-m-functions-keybindings][Define M functions keybindings]]
+  - [[#enabling-table-of-contents][Enabling Table of Contents]]
+  - [[#enabling-org-bullets][Enabling Org Bullets]]
+  - [[#disable-electric-indent][Disable Electric Indent]]
+  - [[#source-code-block-tag-expansion][Source Code Block Tag Expansion]]
+- [[#projectile][PROJECTILE]]
+- [[#posframe][POSFRAME]]
+- [[#rainbow-delimiters][RAINBOW DELIMITERS]]
+- [[#rainbow-mode][RAINBOW MODE]]
+- [[#shells-and-terminals][SHELLS AND TERMINALS]]
+  - [[#eshell][Eshell]]
+  - [[#vterm][Vterm]]
+  - [[#vterm-toggle][Vterm-Toggle]]
+- [[#smartparens][SMARTPARENS]]
+- [[#smooth-scroll][SMOOTH-SCROLL]]
+- [[#theme][THEME]]
+- [[#tree-sitter][TREE-SITTER]]
+- [[#yasnippet][YASNIPPET]]
+- [[#vundo][VUNDO]]
+- [[#which-key][WHICH-KEY]]
+
+* First load
+** Adding the modules directory to path
+#+begin_src emacs-lisp
+(add-to-list 'load-path (concat my/config-dir "modules/"))
+#+end_src
+** Plug modules
+#+begin_src emacs-lisp
+(require 'elpaca-setup)
+(add-hook 'after-init-hook
+	  (lambda ()
+	    ;;; ----------> add to this your modules
+
+	 ;;   (require 'company-mod)
+	    (require 'corfu-ord-cape)
+	    (require 'ivy-counsel-mod)
+	    (require 'vertico-mod)
+	    (require 'treemacs-mod)
+	    (require 'magit-mod)
+	    ))
+#+end_src
+
+** Init
+#+begin_src emacs-lisp
+(setq visible-bell t)
+;; Это дает скрол курсора не с самого низа или верха
+(setq scroll-conservatively 10 
+      scroll-margin 15)
+#+end_src
+
+** Load Evil Mode
+#+BEGIN_SRC emacs-lisp
+(setq evil-want-keybinding nil)
+(setq evil-want-integration t)
+;; Убедимся, что use-package загружен перед использованием
+(elpaca elpaca-use-package (elpaca-use-package-mode))
+
+;; Установка evil с явным ожиданием загрузки
+(use-package evil
+  :ensure t
+  :demand t  ; Загружать немедленно
+  :init
+  (setq evil-vsplit-window-right t)
+  (setq evil-split-window-below t)
+  (setq evil-want-C-u-scroll t)
+  (evil-mode))  ; Явное включение режима
+
+;; Evil Collection должен загружаться ПОСЛЕ evil
+(use-package evil-collection
+  :ensure t
+  :after evil
+  :demand t
+  :config
+  ;; (setq evil-collection-mode-list '(dashboard dired ibuffer eshell org))
+  (evil-collection-init))
+
+(with-eval-after-load 'lsp-mode
+  (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
+
+#+END_SRC
+
+** My functions
+*** Reload Emacs config
+#+begin_src emacs-lisp
+(defun my/reload-config ()
+  "Reload Emacs configuration safely."
+  (interactive)
+  (message "Reloading init file...")
+  (load user-init-file nil 'nomessage)
+  (message "Init file reloaded!"))
+#+end_src
+
+
+*** My Sudo edit
+#+begin_src emacs-lisp
+ (defun my/sudo-edit ()
+  "Edit file as root with explicit bash shell"
+  (interactive)
+  (let ((file (or buffer-file-name (error "Not visiting a file"))))
+    (find-file (format "/sudo::%s" file))))
+#+end_src
+
+** General Keybindings
+
+#+BEGIN_SRC emacs-lisp
+(use-package general
+  :ensure t
+  :config
+  (general-evil-setup)
+  
+  
+  (general-create-definer kahasta/leader-keys
+    :states '(normal insert visual emacs)
+    :keymaps 'override
+    :prefix "SPC" ;; set leader
+    :global-prefix "M-SPC") ;; access leader in insert mode
+  (kahasta/leader-keys
+    "SPC" '(counsel-M-x :wk "Counsel M-x")
+    "." '(find-file :wk "Find file")
+    "f c" '((lambda () (interactive) (find-file (concat my/config-dir "config.org"))) :wk "Edit emacs config")
+    "f r" '(counsel-recentf :wk "Find recent files")
+    "TAB TAB" '(comment-line :wk "Comment lines"))
+
+  (kahasta/leader-keys
+    "b" '(:ignore t :wk "buffer") ;; :ignore t это чтоб игнорировать действие для дальнейших клавиш
+    "b b" '(switch-to-buffer :wk "Switch buffer")
+    "b c" '(clone-indirect-buffer :wk "Create indirect buffer copy in a split")
+    "b C" '(clone-indirect-buffer-other-window :wk "Clone indirect buffer in new window")
+    "b k" '(bookmark-delete :wk "Delete bookmark")
+    "b i" '(ibuffer :wk "Ibuffer")
+    "b d" '((lambda ()
+	      (interactive) (kill-buffer (current-buffer))) :wk "Kill this buffer")
+    "b D" '(kill-some-buffers :wk "Kill multiple buffers")
+    "b l" '(list-bookmarks :wk "List bookmarks")
+    "b m" '(bookmark-set :wk "Set bookmark")
+    "b n" '(next-buffer :wk "Next buffer")
+    "b p" '(previous-buffer :wk "Prev buffer")
+    "b r" '(revert-buffer :wk "Reload buffer")
+    "b R" '(rename-buffer :wk "Rename buffer")
+    "b s" '(basic-save-buffer :wk "Save buffer")
+    "b S" '(save-some-buffers :wk "Save multiple buffers")
+    "b w" '(bookmark-save :wk "Save current bookmarks to bookmark file")
+    )
+
+  (kahasta/leader-keys
+    "c" '(:ignore t :wk "Code")
+    "c a" '(eglot-code-actions :wk "Code actions")
+    "c d" '(xref-find-definitions :wk "Find definition")
+    "c f" '(xref-find-references :wk "Find references")
+    "c r" '(eglot-rename :wk "Rename")
+    )
+
+  (kahasta/leader-keys
+    "d" '(:ignore t :wk "Dired")
+    ;; "d d" '(dirvish :wk "Open dirvish")
+    "d d" '(dired :wk "Open dired")
+    "d j" '(dired-jump :wk "Dired jump to current")
+    "d v" '(peep-dired :wk "Peep dired toggle")
+    ;; "d n" '(neotree-toggle :wk "Open directory in neotree")
+    )
+
+  (kahasta/leader-keys
+    "e" '(:ignore t :wk "Evaluate")    
+    "e b" '(eval-buffer :wk "Evaluate elisp in buffer")
+    "e d" '(eval-defun :wk "Evaluate defun containing or after point")
+    "e e" '(eval-expression :wk "Evaluate and elisp expression")
+    "e l" '(eval-last-sexp :wk "Evaluate elisp expression before point")
+    "e r" '(eval-region :wk "Evaluate elisp in region")
+    ;;     "e s" '(eshell :which-key "Eshell")
+    )
+  
+  
+  (kahasta/leader-keys
+    "f u" '(my/sudo-edit :wk "my sudo edit"))
+
+  (kahasta/leader-keys
+    "g" '(:ignore t :wk "go to")
+    "g g" '(magit-status :wk "Magit status")
+    "g c" '(avy-goto-char :wk "Jump to char"))
+
+  (kahasta/leader-keys
+    "h" '(:ignore t :wk "Help")
+    "h f" '(describe-function :wk "Describe function")
+    "h v" '(describe-variable :wk "Describe variable")
+    "h r r" '((lambda () (interactive)
+		(load-file (concat my/config-dir "init.el"))
+		(ignore (elpaca-process-queues)))
+	      :wk "Reload emacs config"))
+  
+  
+
+  (kahasta/leader-keys
+    "l" '(:ignore t :wk "Lsp")
+    "l f" '(format-all-buffer :wk "Formatting buffer")
+    "l o" '(my/org-format-src-block :wk "Formatting org-mode buffer")
+    )
+
+
+
+  (kahasta/leader-keys
+    "p" '(projectile-command-map :wk "Projectile")
+    )
+  
+  (kahasta/leader-keys
+    "o" '(:ignore t :wk "Open")
+    "o a" '(emacs-run-launcher :wk "App-Launcher")
+    "o e" '(eshell :wk "Eshell")
+    "o h" '(counsel-esh-history :which-key "Eshell history")
+    "o n" '(treemacs :wk "Treemacs")
+    "o v" '(vterm-toggle :wk "Vterm"))
+
+  (kahasta/leader-keys
+    "t" '(:ignore t :wk "Toggle")
+    "t a" '(aggressive-indent-mode :wk "Aggressive-indent toggle")
+    "t e" '(eldoc-box-hover-at-point-mode :wk "Eldoc box hover toggle")
+    "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
+    "t T" '(visual-line-mode :wk "Toggle truncated lines")
+    "t t" '(load-theme :wk "Load theme"))
+
+  (kahasta/leader-keys
+    "u" '(:ignore t :wk "Utils")
+    "u u" '(vundo :wk "Undo")
+    )
+
+  (kahasta/leader-keys
+    "w" '(:ignore t :wk "Windows")
+    ;; Window splits
+    "w c" '(evil-window-delete :wk "Close window")
+    "w n" '(evil-window-new :wk "New window")
+    "w s" '(evil-window-split :wk "Horizontal split window")
+    "w v" '(evil-window-vsplit :wk "Vertical split window")
+    ;; Window motions
+    "w h" '(evil-window-left :wk "Window left")
+    "w j" '(evil-window-down :wk "Window down")
+    "w k" '(evil-window-up :wk "Window up")
+    "w l" '(evil-window-right :wk "Window right")
+    "w o" '(other-window :wk "Ace window")
+    "w w" '(evil-window-next :wk "Goto next window")
+    ;; Move Windows
+    "w H" '(buf-move-left :wk "Buffer move left")
+    "w J" '(buf-move-down :wk "Buffer move down")
+    "w K" '(buf-move-up :wk "Buffer move up")
+    "w L" '(buf-move-right :wk "Buffer move right"))
+  )
+
+  #+end_src
+
+* ACE-WINDOW
+#+begin_src emacs-lisp
+(use-package ace-window
+  :ensure t
+  :init
+  (progn
+    (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))  ; Буквы для выбора окон
+    (setq aw-scope 'frame)                       ; В рамках одного фрейма
+    (global-set-key [remap other-window] 'ace-window))
+  :config
+  ;; Цвета для номеров окон
+  (set-face-attribute 'aw-leading-char-face nil 
+                      :foreground "red" 
+                      :height 2.0)
+  
+  ;; Минимальный размер окна для выбора
+  (setq aw-minibuffer-flag nil
+        aw-ignore-on t
+        aw-dispatch-always t)
+  
+  ;; Для работы с ivy/helm
+  (setq aw-dispatch-algorithm 'aw-dispatch-algo-ivy))
+
+  ;; Для отображения номеров окон
+  (use-package window-numbering
+    :ensure t
+    :config
+    (window-numbering-mode 1))
+  
+#+end_src
+
+* AGGRESSIVE-INDENT
+#+begin_src emacs-lisp
+(use-package aggressive-indent
+  :ensure t)
+  
+#+end_src
+
+* APP LAUNCHER
+** App-Launcher
+The app-launcher is a better run launcher since it reads the desktop applications on your system and you can search them by their names as defined in their desktop file.  This means that sometimes you have to search for a generic term rather than the actual binary command of the program.
+#+begin_src emacs-lisp
+(use-package app-launcher
+  :ensure '(app-launcher :host github :repo "SebastienWae/app-launcher"))
+;; create a global keyboard shortcut with the following code
+;; emacsclient -cF "((visibility . nil))" -e "(emacs-run-launcher)"
+
+(defun emacs-run-launcher ()
+  "Create and select a frame called emacs-run-launcher which consists only of a minibuffer and has specific dimensions. Runs app-launcher-run-app on that frame, which is an emacs command that prompts you to select an app and open it in a dmenu like behaviour. Delete the frame after that command has exited"
+  (interactive)
+  (with-selected-frame 
+      (make-frame '((name . "emacs-run-launcher")
+                    (minibuffer . only)
+                    (fullscreen . 0) ; no fullscreen
+                    (undecorated . t) ; remove title bar
+                    ;;(auto-raise . t) ; focus on this frame
+                    ;;(tool-bar-lines . 0)
+                    ;;(menu-bar-lines . 0)
+                    (internal-border-width . 10)
+                    (width . 80)
+                    (height . 11)))
+    (unwind-protect
+        (app-launcher-run-app)
+      (delete-frame))))
+
+#+end_src
+
+* ALL THE ICONS
+#+begin_src emacs-lisp
+(use-package all-the-icons
+  :ensure t
+  :if (display-graphic-p))
+
+(use-package all-the-icons-dired
+  :ensure t
+  :hook (dired-mode . (lambda () (all-the-icons-dired-mode t))))
+#+end_src
+
+* AVY
+#+begin_src emacs-lisp
+(use-package avy
+  :ensure t
+  :bind (:map prog-mode-map ("C-'" . #'avy-goto-line))
+  :bind (:map org-mode-map ("C-'" . #'avy-goto-line))
+  :bind (("C-c l" . #'avy-goto-line)
+         ("C-c j k" . #'avy-kill-whole-line)
+         ("C-c j j" . #'avy-goto-line)
+         ("C-c j h" . #'avy-kill-region)
+         ("C-c j w" . #'avy-copy-line)
+         ("C-z" . #'avy-goto-char)
+         ("C-c v" . #'avy-goto-char)))
+
+(use-package avy-zap
+  :ensure t
+  :bind (("C-c z" . #'avy-zap-to-char)
+         ("C-c Z" . #'avy-zap-up-to-char)))
+#+end_src
+* BACKUP & TRASH FILES
+#+begin_src emacs-lisp
+(setq backup-directory-alist `(("." . ,(expand-file-name "backups/" user-emacs-directory))))
+#+end_src
+
+* BUFFERMOVE
+#+begin_src emacs-lisp
+(require 'windmove)
+
+;;;###autoload
+(defun buf-move-up ()
+  "Swap the current buffer and the buffer above the split.
+If there is no split, ie now window above the current one, an
+error is signaled."
+  ;;  "Switches between the current buffer, and the buffer above the
+  ;;  split, if possible."
+  (interactive)
+  (let* ((other-win (windmove-find-other-window 'up))
+	 (buf-this-buf (window-buffer (selected-window))))
+    (if (null other-win)
+        (error "No window above this one")
+      ;; swap top with this one
+      (set-window-buffer (selected-window) (window-buffer other-win))
+      ;; move this one to top
+      (set-window-buffer other-win buf-this-buf)
+      (select-window other-win))))
+
+;;;###autoload
+(defun buf-move-down ()
+  "Swap the current buffer and the buffer under the split.
+If there is no split, ie now window under the current one, an
+error is signaled."
+  (interactive)
+  (let* ((other-win (windmove-find-other-window 'down))
+	 (buf-this-buf (window-buffer (selected-window))))
+    (if (or (null other-win) 
+            (string-match "^ \\*Minibuf" (buffer-name (window-buffer other-win))))
+        (error "No window under this one")
+      ;; swap top with this one
+      (set-window-buffer (selected-window) (window-buffer other-win))
+      ;; move this one to top
+      (set-window-buffer other-win buf-this-buf)
+      (select-window other-win))))
+
+;;;###autoload
+(defun buf-move-left ()
+  "Swap the current buffer and the buffer on the left of the split.
+If there is no split, ie now window on the left of the current
+one, an error is signaled."
+  (interactive)
+  (let* ((other-win (windmove-find-other-window 'left))
+	 (buf-this-buf (window-buffer (selected-window))))
+    (if (null other-win)
+        (error "No left split")
+      ;; swap top with this one
+      (set-window-buffer (selected-window) (window-buffer other-win))
+      ;; move this one to top
+      (set-window-buffer other-win buf-this-buf)
+      (select-window other-win))))
+
+;;;###autoload
+(defun buf-move-right ()
+  "Swap the current buffer and the buffer on the right of the split.
+If there is no split, ie now window on the right of the current
+one, an error is signaled."
+  (interactive)
+  (let* ((other-win (windmove-find-other-window 'right))
+	 (buf-this-buf (window-buffer (selected-window))))
+    (if (null other-win)
+        (error "No right split")
+      ;; swap top with this one
+      (set-window-buffer (selected-window) (window-buffer other-win))
+      ;; move this one to top
+      (set-window-buffer other-win buf-this-buf)
+      (select-window other-win))))
+#+end_src
+
+* CENTAUR-TABS
+#+begin_src emacs-lisp
+(use-package centaur-tabs
+  :ensure t
+  :demand
+  :config
+  (centaur-tabs-mode t)
+  :bind
+  ("C-<tab>" . centaur-tabs-forward))
+#+end_src
+
+* CONFIGURATION FOR FILES
+#+begin_src emacs-lisp
+(use-package yaml-mode 
+  :ensure t
+  :defer t)
+(use-package dockerfile-mode 
+  :ensure t
+  :defer t)
+(use-package toml-mode 
+  :ensure t
+  :defer t)
+(use-package dhall-mode
+  :ensure t)
+(use-package terraform-mode 
+  :ensure t
+  :defer t)
+#+end_src
+
+* DASHBOARD
+Emacs Dashboard is an extensible startup screen showing you recent files, bookmarks, agenda items and an Emacs banner.
+#+begin_src emacs-lisp
+(use-package dashboard
+  :ensure t 
+  :init
+  (setq initial-buffer-choice 'dashboard-open)
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+  (setq dashboard-banner-logo-title "Emacs Is More Than A Text Editor!")
+  ;;(setq dashboard-startup-banner 'logo) ;; use standard emacs logo as banner
+  (setq dashboard-startup-banner (concat my/config-dir "images/emacs.png"))  ;; use custom image as banner
+  (setq dashboard-center-content nil) ;; set to 't' for centered content
+  (setq dashboard-items '((recents . 10)
+                          (agenda . 5 )
+                          (bookmarks . 3)
+                          (projects . 5)
+                          (registers . 3)))
+  :custom
+  (dashboard-modify-heading-icons '((recents . "file-text")
+                                    (bookmarks . "book")))
+  :config
+  (dashboard-setup-startup-hook))
+#+end_src
+
+* DIRED
+#+begin_src emacs-lisp
+
+;; Добавляет загрузку пакета dired-x при инициализации Dired. dired-x расширяет возможности Dired, добавляя функции, такие как:
+;;  *  Улучшенная работа с файлами (например, открытие по C-x C-f).
+;;  *  Команды для массового переименования, копирования и перемещения.
+;;  *  Поддержка дополнительных операций, вроде запуска внешних программ.
+(add-hook 'dired-load-hook (function (lambda () (load "dired-x"))))
+
+(use-package dired-open
+  :ensure t
+  :config
+  (setf dired-kill-when-opening-new-dired-buffer t)
+  (setq dired-open-extensions '(("gif" . "sxiv")
+                                ("jpg" . "sxiv")
+                                ("jpeg" . "sxiv")
+                                ("png" . "sxiv")
+                                ("png" . "sxiv")
+                                ("mkv" . "mpv")
+                                ("mp4" . "mpv"))))
+
+(use-package peep-dired
+  :ensure t
+  :after dired
+  :hook (evil-normalize-keymaps . peep-dired-hook)
+  :config
+  (evil-define-key 'normal dired-mode-map
+    "h" 'dired-up-directory
+    "l" 'dired-open-file
+    "v" 'peep-dired)
+  
+  (evil-define-key 'normal peep-dired-mode-map
+    "j" 'peep-dired-next-file
+    "k" 'peep-dired-prev-file
+    "q" 'peep-dired-quit
+    "l" 'peep-dired-open-file)
+  ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
+  ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
+  (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  )
+
+
+
+#+end_src
+
+* DIMINISH
+This package implements hiding or abbreviation of the modeline displays (lighters) of minor-modes.  With this package installed, you can add ‘:diminish’ to any use-package block to hide that particular mode in the modeline.
+#+begin_src emacs-lisp
+(use-package diminish :ensure t)
+#+end_src
+
+* EXPAND-REGION
+#+begin_src emacs-lisp
+(use-package expand-region
+  :ensure t
+  :bind 
+  ("C-M-e" . er/contract-region)
+  ("C-S-e" . er/expand-region)
+  :config
+  (setq er/try-expand-list (append er/try-expand-list
+                                 '(mark-paragraph
+                                   mark-whole-buffer)))
+)
+#+end_src
+* EXTENSION EMACS UTILS
+#+begin_src emacs-lisp
+(use-package s
+  :ensure t
+  :defer t
+  :init
+  (message "Loading string manipulation utilities (s)..."))
+
+(use-package dash
+  :ensure t
+  :defer t
+  :config
+  (when (fboundp 'pt/unbind-bad-keybindings)
+    (pt/unbind-bad-keybindings))
+  (message "Dash functional programming helpers ready"))
+
+(use-package shut-up
+  :ensure t
+  :defer t
+  :config
+  (setq shut-up-ignore '*)
+  (message "Output silencing package (shut-up) initialized"))
+#+end_src
+* EGLOT
+#+begin_src emacs-lisp
+(use-package eglot
+  :ensure nil  ; Встроен в Emacs 29+
+  :hook
+  ((python-mode js-mode rust-mode dart-mode) . eglot-ensure)
+  
+  :config
+  (add-to-list 'eglot-server-programs
+               '(rust-mode . ("rust-analyzer")))
+  ;; Оптимизации для Rust
+  (setq eglot-ignored-server-capabilities
+        '(:documentFormattingProvider))
+  (setq eglot-autoshutdown t
+        eglot-send-changes-idle-time 0.5))
+
+
+#+end_src
+
+* ELDOC-BOX HELPFUL EMBARK
+#+begin_src emacs-lisp
+;; helpful — улучшенные describe-функции
+(use-package helpful
+  :ensure t
+  :bind (([remap describe-function] . helpful-callable)
+         ([remap describe-variable] . helpful-variable)
+         ([remap describe-symbol]   . helpful-symbol)
+         ([remap describe-key]      . helpful-key)))
+
+
+
+;; eldoc-box — всплывающая документация
+(use-package eldoc-box
+  :ensure t
+  ;; :hook (
+   	 ;; (prog-mode . eldoc-box-hover-mode)
+   ;;       (emacs-lisp-mode . eldoc-box-hover-mode)
+   ;;	 (prog-mode . eldoc-box-hover-at-point-mode)
+   	;; )
+  :custom
+  (global-set-key (kbd "K") #'my/show-doc-posframe)
+  (eldoc-box-clear-with-C-g t)         ;; закрывать по C-g
+  (eldoc-box-max-pixel-width 600)
+  (eldoc-box-only-multi-line t)        ;; показывать, только если есть что показать
+  (eldoc-echo-area-use-multiline-p nil)) ;; отключить echo-area
+;; Опционально: embak для контекстных действий
+(use-package embark
+  :ensure t
+  :bind
+  (("C-." . embark-act)
+   ;; ("K" .  eldoc-box-help-at-point)
+   ("C-h B" . embark-bindings)))
+#+end_src
+* FLYCHECK
+Install luacheck from your Linux distro’s repositories for flycheck to work correctly with lua files.  Install python-pylint for flycheck to work with python files.  Haskell works with flycheck as long as haskell-ghc or haskell-stack-ghc is installed.  For more information on language support for flycheck, read this.
+#+begin_src emacs-lisp
+(use-package flycheck
+  :ensure t
+  :defer t
+  :diminish
+  :init (global-flycheck-mode))
+#+end_src
+
+* FLYMAKE
+#+begin_src emacs-lisp
+(use-package flymake
+  :ensure t
+  :config
+  (setq elisp-flymake-byte-compile-load-path load-path)
+  :hook ((emacs-lisp-mode . flymake-mode)))
+#+end_src
+
+* FONTS
+Settings fonts.
+
+#+begin_src emacs-lisp
+
+  (defun my/setup-my-fonts ()
+    "Настройка шрифтов" 
+    (interactive)
+    (let ((font-size 15)  ; Размер по умолчанию
+           (main-font "JetBrains Mono")
+          ;;(main-font "Iosevka")
+           (var-font "Noto Serif")
+          ;;(var-font "Iosevka Aile")
+	        (line-spacing-size 0.12))
+      
+      ;; Проверка графического режима
+      (when (display-graphic-p)
+        ;; Основные настройки шрифтов
+        (set-face-attribute 'default nil
+                           :font main-font
+                           :height (* 10 font-size)  
+                           :weight 'medium)
+        
+        (set-face-attribute 'variable-pitch nil
+                           :font var-font
+                           :height (* 10 (+ font-size 1)))
+        
+        (set-face-attribute 'fixed-pitch nil
+                           :font main-font
+                           :height (* 10 font-size))
+        
+        ;; Настройки для фреймов
+        (add-to-list 'initial-frame-alist 
+                    `(font . ,(format "%s-%d" main-font font-size)))
+        (add-to-list 'default-frame-alist 
+                    `(font . ,(format "%s-%d" main-font font-size)))
+        
+        ;; Стили для комментариев и ключевых слов
+        (set-face-attribute 'font-lock-comment-face nil 
+			    :slant 'italic
+			    :font var-font)
+        (set-face-attribute 'font-lock-keyword-face nil 
+			    :slant 'italic
+			    :font var-font)
+        
+        ;; Межстрочный интервал
+        (setq-default line-spacing line-spacing-size)))
+
+    ;; Инициализация при загрузке
+    (message "Fonts initializing complete")
+  )
+
+
+  (add-hook 'after-init-hook 'my/setup-my-fonts)
+  ;; (add-hook 'emacs-startup-hook 'my/setup-font)
+
+#+end_src
+
+
+** Zooming In/Out
+#+begin_src emacs-lisp
+(global-set-key (kbd "C-=") 'text-scale-increase)
+(global-set-key (kbd "C--") 'text-scale-decrease)
+(global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
+(global-set-key (kbd "<C-wheel-down>") 'text-scale-decrease)
+#+end_src
+
+* FORMAT-ALL
+#+begin_src emacs-lisp
+(use-package format-all
+  :ensure t
+  :hook ((prog-mode . format-all-ensure-formatter)
+         (before-save . format-all-buffer)))
+
+(defun my/org-format-src-block ()
+  "Форматировать текущий блок кода в Org-mode."
+  (interactive)
+  (when (org-in-src-block-p)
+    (org-edit-special)
+    (indent-region (point-min) (point-max))
+    (org-edit-src-exit)))
+#+end_src
+
+* UI SETTINGS AND TWEAKS
+Enchance emacs ui.
+
+** Disable Menubar, Toolbars and Scrollbars
+#+begin_src emacs-lisp
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(scroll-bar-mode -1)
+#+end_src
+
+** Display Line Nums and Truncated Lines
+#+begin_src emacs-lisp
+  (global-display-line-numbers-mode 1)
+  (column-number-mode 1)
+  (global-visual-line-mode t)
+  (delete-selection-mode 1) 
+#+end_src
+
+
+* LANGUAGE SUPPORT
+Emacs has built-in programming language modes for Lisp, Scheme, DSSSL, Ada, ASM, AWK, C, C++, Fortran, Icon, IDL (CORBA), IDLWAVE, Java, Javascript, M4, Makefiles, Metafont, Modula2, Object Pascal, Objective-C, Octave, Pascal, Perl, Pike, PostScript, Prolog, Python, Ruby, Simula, SQL, Tcl, Verilog, and VHDL.  Other languages will require you to install additional modes.
+** C/C++
+#+begin_src emacs-lisp
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+               '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("ccls" "--init" "{\"compilationDatabaseDirectory\": \"build\"}"))))
+
+(add-hook 'c-mode-hook 'eglot-ensure)
+(add-hook 'c-ts-mode-hook 'eglot-ensure)
+(add-hook 'c++-mode-hook 'eglot-ensure)
+(add-hook 'c++-ts-mode-hook 'eglot-ensure)
+#+end_src
+** lua
+#+begin_src emacs-lisp
+(use-package lua-mode :ensure t)
+#+end_src
+
+** rust
+#+begin_src emacs-lisp
+(use-package rust-mode
+  :ensure t
+  :hook (rust-mode . (lambda ()
+                      (setq indent-tabs-mode nil
+                            tab-width 4)))
+  :config
+  (setq rust-format-on-save t))
+
+(use-package cargo
+  :ensure t
+  :hook (rust-mode . cargo-minor-mode))
+
+(with-eval-after-load 'general
+  (general-define-key
+   :states '(normal)
+   :keymaps 'rust-mode-map
+   :prefix "SPC m"
+   "" '(:ignore t :wk "Mode functions")
+   "r" '(rust-run :wk "Run")
+   "t" '(rust-test :wk "Run test")
+   "c" '(rust-run-clippy :wk "Run clippy")
+   "C r" '(rust-compile-release :wk "compile release")
+   "C c" '(rust-compile :wk "compile release")
+)
+)
+
+
+#+end_src
+
+** flutter
+#+begin_src emacs-lisp
+(use-package dart-mode
+  ;; Optional
+  :ensure t
+  :hook (dart-mode . flutter-test-mode))
+
+(use-package flutter
+  :ensure t
+  :after dart-mode
+  :bind (:map dart-mode-map
+              ("C-M-x" . #'flutter-run-or-hot-reload))
+  :custom
+  (flutter-sdk-path "/home/kahasta/development/flutter/"))
+
+(with-eval-after-load 'general
+(general-define-key
+   :states '(normal) ; Для normal-состояния Evil
+   :keymaps 'dart-mode-map ; Только в org-mode
+   :prefix "SPC m" ; Лидер-ключ SPC m
+   "" '(:ignore t :which-key "Mode functions") 
+   "s" '(flutter-run :wk "Flutter run")
+   "r" '(flutter-hot-reload :wk "Flutter Hot reload")
+   "R" '(flutter-hot-restart :wk "Flutter Hot restart")
+   "q" '(flutter-quit :wk "Flutter quit")
+))
+#+end_src
+
+# * NEOTREE
+# Neotree is a file tree viewer.  When you open neotree, it jumps to the current file thanks to neo-smart-open.  The neo-window-fixed-size setting makes the neotree width be adjustable.  NeoTree provides following themes: classic, ascii, arrow, icons, and nerd.  Theme can be configed by setting “two” themes for neo-theme: one for the GUI and one for the terminal.  I like to use ‘SPC t’ for ‘toggle’ keybindings, so I have used ‘SPC t n’ for toggle-neotree.
+# #+begin_src emacs-lisp
+# (use-package neotree
+#   :ensure t
+#   :config
+#   (setq neo-smart-open t
+#         neo-show-hidden-files t
+#         neo-window-width 35
+#         neo-window-fixed-size nil
+#         inhibit-compacting-font-caches t
+#         projectile-switch-project-action 'neotree-projectile-action) 
+#         ;; truncate long file names in neotree
+#         (add-hook 'neo-after-create-hook
+#            #'(lambda (_)
+#                (with-current-buffer (get-buffer neo-buffer-name)
+#                  (setq truncate-lines t)
+#                  (setq word-wrap nil)
+#                  (make-local-variable 'auto-hscroll-mode)
+#                  (setq auto-hscroll-mode nil)))))
+
+# ;; show hidden files
+# #+end_src
+
+* MARGINALIA
+#+begin_src emacs-lisp
+(use-package marginalia
+  :ensure t
+  :after ivy
+  :config
+  (setq marginalia-annotators
+	'(marginalia-annotators-heavy marginalia-annotators-light nil))
+
+;; Кастомизация отображения
+  (setq marginalia-align 'right
+	marginalia-field-width 100)
+  (marginalia-mode 1))
+#+end_src
+
+* ORG MODE
+** Define M functions keybindings
+#+begin_src emacs-lisp
+(with-eval-after-load 'general
+  (general-define-key
+   :states '(normal)
+   :keymaps 'org-mode-map
+   :prefix "SPC m"
+   "" '(:ignore t :wk "Mode functions")
+   "a" '(org-agenda :wk "Org agenda")
+   "b" '(:ignore t :wk "Tables")
+   "b -" '(org-table-insert-hline :wk "Insert hline in table")
+   "d" '(:ignore t :wk "Date/deadline")
+   "d t" '(org-time-stamp :wk "Org time stamp")
+   "e" '(org-export-dispatch :wk "Org export dispatch")
+   "i" '(org-toggle-item :wk "Org toggle item")
+   "t" '(org-todo :wk "Org todo")
+   "B" '(org-babel-tangle :wk "Org babel tangle")
+   "T" '(org-todo-list :wk "Org todo list")
+   ))
+#+end_src
+** Enabling Table of Contents
+#+begin_src emacs-lisp
+(use-package toc-org
+  :ensure t
+  :commands toc-org-enable
+  :init (add-hook 'org-mode-hook 'toc-org-enable))
+#+end_src
+
+
+** Enabling Org Bullets
+Org-bullets gives us attractive bullets rather than asterisks.
+
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook 'org-indent-mode)
+(use-package org-bullets :ensure t)
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+#+end_src
+
+** Disable Electric Indent
+#+begin_src emacs-lisp
+(electric-indent-mode -1)
+(setq org-edit-src-content-indentation 0)
+#+end_src
+
+** Source Code Block Tag Expansion
+Org-tempo is not a separate package but a module within org that can be enabled.  Org-tempo allows for ‘<s’ followed by TAB to expand to a begin_src tag.  
+#+begin_src emacs-lisp
+(require 'org-tempo)
+#+end_src
+
+* PROJECTILE
+Projectile is a project interaction library for Emacs.  It should be noted that many projectile commands do not work if you have set “fish” as the “shell-file-name” for Emacs.  I had initially set “fish” as the “shell-file-name” in the Vterm section of this config, but oddly enough I changed it to “bin/sh” and projectile now works as expected, and Vterm still uses “fish” because my default user “sh” on my Linux system is “fish”.
+#+begin_src emacs-lisp
+(use-package projectile
+  :ensure t
+  :config
+  (setq projectile-completion-system 'ivy)
+  (projectile-mode 1))
+
+#+end_src
+
+* POSFRAME
+#+begin_src emacs-lisp
+(use-package posframe
+  :ensure t)
+
+ (with-eval-after-load 'posframe
+(defvar my/doc-posframe-buffer "*doc-posframe*")
+
+(defun my/hide-doc-posframe ()
+  "Скрыть всплывающее окно с документацией."
+  (interactive)
+  (posframe-hide-all))
+
+(defun my/show-doc-posframe ()
+  "Показать документацию во всплывающем окне posframe."
+  (interactive)
+  (let* ((doc (or (and (fboundp 'eldoc--doc-buffer)
+                       (buffer-live-p (eldoc--doc-buffer))
+                       (with-current-buffer (eldoc--doc-buffer)
+                         (buffer-string)))
+                  (let ((sym (symbol-at-point)))
+                    (and sym (documentation sym)))
+                  "Нет документации.")))
+    (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert doc)
+        (goto-char (point-min))
+        (read-only-mode 1))
+      (use-local-map (let ((map (make-sparse-keymap)))
+                       (define-key map (kbd "C-g") #'my/hide-doc-posframe)
+                       map)))
+    (posframe-show my/doc-posframe-buffer
+                   :string nil
+                   :position (point)
+                   :internal-border-width 10
+                   :border-width 1
+                   :background-color (face-background 'tooltip nil t)
+                   :accept-focus nil
+                   :timeout nil)))
+
+;; (defun my/show-doc-posframe ()
+;;   "Показать документацию во всплывающем окне posframe."
+;;   (interactive)
+;;   (let* ((sym (symbol-at-point))
+;;          (doc (or (and sym (documentation sym)) "Нет документации.")))
+;;     (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
+;;       (let ((inhibit-read-only t))
+;;       (erase-buffer)
+;;       (insert doc)
+;;       (goto-char (point-min))
+;;       (read-only-mode 1))
+;;       (use-local-map (let ((map (make-sparse-keymap)))
+;;                        (define-key map (kbd "C-g") #'my/hide-doc-posframe)
+;;                        map)))
+;;     (posframe-show my/doc-posframe-buffer
+;;                    :string nil ;; nil — использовать содержимое буфера
+;;                    :position (point)
+;;                    :internal-border-width 10
+;;                    :border-width 1
+;;                    :background-color (face-background 'tooltip nil t)
+;;                    :accept-focus nil ;; без фокуса — иначе posframe зависнет
+;;                    :timeout nil)))
+
+;; Привязка в evil-normal-state
+(define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
+(define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe))
+
+
+#+end_src
+* RAINBOW DELIMITERS
+#+begin_src emacs-lisp
+(use-package rainbow-delimiters
+  :ensure t
+  :hook (prog-mode . rainbow-delimiters-mode)
+  :config
+  (setq rainbow-delimiters-max-face-count 5))
+#+end_src
+
+* RAINBOW MODE
+Display the actual color as a background for any hex color value (ex. #ffffff).  The code block below enables rainbow-mode in all programming modes (prog-mode) as well as org-mode, which is why rainbow works in this document.
+#+begin_src emacs-lisp
+  (use-package rainbow-mode
+    :ensure t
+    :hook 
+    ((org-mode prog-mode) . rainbow-mode))
+#+end_src
+
+* SHELLS AND TERMINALS
+
+** Eshell
+Eshell is an Emacs ‘shell’ that is written in Elisp.
+#+begin_src emacs-lisp
+  (use-package eshell-syntax-highlighting
+    :ensure t
+    :after esh-mode
+    :config
+    (eshell-syntax-highlighting-global-mode +1))
+
+  ;; eshell-syntax-highlighting -- adds fish/zsh-like syntax highlighting.
+  ;; eshell-rc-script -- your profile for eshell; like a bashrc for eshell.
+  ;; eshell-aliases-file -- sets an aliases file for the eshell.
+    
+  (setq eshell-rc-script (concat user-emacs-directory "eshll/profile") ;; в этом файле автозапуск команд
+        eshell-aliases-file (concat user-emacs-directory "eshell/aliases")
+        eshell-history-size 5000
+        eshell-buffer-maximum-lines 5000
+        eshell-hist-ignoredups t
+        eshell-scroll-to-bottom-on-input t
+        eshell-destroy-buffer-when-process-dies t
+        eshell-visual-commands'("bash" "fish" "nushell" "htop" "ssh" "top" "zsh"))
+#+end_src
+
+** Vterm
+Vterm is a terminal emulator within Emacs.  The ‘shell-file-name’ setting sets the shell to be used in M-x shell, M-x term, M-x ansi-term and M-x vterm.  By default, the shell is set to ‘fish’ but could change it to ‘bash’ or ‘zsh’ if you prefer.
+#+begin_src emacs-lisp
+  (use-package vterm
+  :ensure t
+  :config
+  (setq shell-file-name "/usr/bin/nu"
+        vterm-max-scrollback 5000))
+#+end_src
+
+** Vterm-Toggle
+vterm-toggle toggles between the vterm buffer and whatever buffer you are editing.
+#+begin_src emacs-lisp
+  (use-package vterm-toggle
+    :ensure t
+    :after vterm
+    :config
+    (setq vterm-toggle-fullscreen-p nil)
+    (setq vterm-toggle-scope 'project)
+    (add-to-list 'display-buffer-alist
+                 '((lambda (buffer-or-name _)
+                       (let ((buffer (get-buffer buffer-or-name)))
+                         (with-current-buffer buffer
+                           (or (equal major-mode 'vterm-mode)
+                               (string-prefix-p vterm-buffer-name (buffer-name buffer))))))
+                    (display-buffer-reuse-window display-buffer-at-bottom)
+                    ;;(display-buffer-reuse-window display-buffer-in-direction)
+                    ;;display-buffer-in-direction/direction/dedicated is added in emacs27
+                    ;;(direction . bottom)
+                    ;;(dedicated . t) ;dedicated is supported in emacs27
+                    (reusable-frames . visible)
+                    (window-height . 0.3))))
+#+end_src
+
+* SMARTPARENS
+#+begin_src emacs-lisp
+(use-package smartparens
+  :ensure t
+  :hook (prog-mode . smartparens-mode)
+  :config
+  (require 'smartparens-config)
+  ;; Автозакрытие парных символов
+  (setq sp-autoescape-string-quote nil)
+  ;; Позволяет удалять парные символы сразу
+  (sp-local-pair 'emacs-lisp-mode "'" nil :actions nil)
+  (sp-local-pair 'web-mode "<" ">"))
+#+end_src
+
+* SMOOTH-SCROLL 
+#+begin_src emacs-lisp
+(use-package smooth-scroll
+  :ensure t
+  :config
+  (smooth-scroll-mode 1))
+#+end_src
+
+* THEME
+#+begin_src emacs-lisp
+    (use-package doom-themes
+      :ensure t
+      :config
+      ;; Global settings (defaults)
+      (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+            doom-themes-enable-italic t) ; if nil, italics is universally disabled
+      (load-theme 'doom-gruvbox t)
+
+      ;; Enable flashing mode-line on errors
+      (doom-themes-visual-bell-config)
+      ;; Enable custom neotree theme (nerd-icons must be installed!)
+      (doom-themes-neotree-config)
+      ;; or for treemacs users
+      (setq doom-themes-treemacs-theme "doom-one") ; use "doom-colors" for less minimal icon theme
+      (doom-themes-treemacs-config)
+      ;; Corrects (and improves) org-mode's native fontification.
+      (doom-themes-org-config))
+
+      (use-package doom-modeline
+        :ensure t
+        :init (doom-modeline-mode 1)
+	:config
+	(setq doom-modeline-height 30
+	      doom-modeline-bar-width 5
+	      doom-modeline-persp-name t
+	      doom-modeline-persp-icon t))
+
+
+#+end_src
+
+* TREE-SITTER
+#+begin_src emacs-lisp
+
+;; (use-package tree-sitter
+;;   :ensure t
+;;   :init
+;;   (global-tree-sitter-mode 1))
+;; Установка tree-sitter
+
+(use-package tree-sitter-langs
+  :ensure t)
+
+;; Tree-sitter
+(use-package tree-sitter
+  :defer t
+  :config
+  (use-package tree-sitter-langs
+    :ensure t)
+  (setq tree-sitter-debug-jump-buttons t
+        tree-sitter-debug-highlight-jump-region t))
+
+;; evil-textobj-tree-sitter
+(use-package evil-textobj-tree-sitter
+  :defer t
+  :after tree-sitter
+  :config
+  (defvar +tree-sitter-inner-text-objects-map (make-sparse-keymap))
+  (defvar +tree-sitter-outer-text-objects-map (make-sparse-keymap))
+  (defvar +tree-sitter-goto-previous-map (make-sparse-keymap))
+  (defvar +tree-sitter-goto-next-map (make-sparse-keymap))
+
+  (evil-define-key '(visual operator) 'tree-sitter-mode
+    "i" +tree-sitter-inner-text-objects-map
+    "a" +tree-sitter-outer-text-objects-map)
+  (evil-define-key 'normal 'tree-sitter-mode
+    "[g" +tree-sitter-goto-previous-map
+    "]g" +tree-sitter-goto-next-map)
+
+  (defun +tree-sitter-get-textobj (query)
+    `(evil-textobj-tree-sitter-get-textobj ,query))
+
+  (defun +tree-sitter-goto-textobj (query &optional backwards)
+    `(evil-textobj-tree-sitter-goto-textobj ,query ,backwards))
+
+  ;; Привязки клавиш (map!)
+  (define-key +tree-sitter-inner-text-objects-map "A" (+tree-sitter-get-textobj '("parameter.inner" "call.inner")))
+  (define-key +tree-sitter-inner-text-objects-map "f" (+tree-sitter-get-textobj "function.inner"))
+  (define-key +tree-sitter-inner-text-objects-map "F" (+tree-sitter-get-textobj "call.inner"))
+  (define-key +tree-sitter-inner-text-objects-map "C" (+tree-sitter-get-textobj "class.inner"))
+  (define-key +tree-sitter-inner-text-objects-map "v" (+tree-sitter-get-textobj "conditional.inner"))
+  (define-key +tree-sitter-inner-text-objects-map "l" (+tree-sitter-get-textobj "loop.inner"))
+
+  (define-key +tree-sitter-outer-text-objects-map "A" (+tree-sitter-get-textobj '("parameter.outer" "call.outer")))
+  (define-key +tree-sitter-outer-text-objects-map "f" (+tree-sitter-get-textobj "function.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "F" (+tree-sitter-get-textobj "call.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "C" (+tree-sitter-get-textobj "class.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "c" (+tree-sitter-get-textobj "comment.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "v" (+tree-sitter-get-textobj "conditional.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "l" (+tree-sitter-get-textobj "loop.outer"))
+
+  (define-key +tree-sitter-goto-previous-map "a" (+tree-sitter-goto-textobj "parameter.outer" t))
+  (define-key +tree-sitter-goto-previous-map "f" (+tree-sitter-goto-textobj "function.outer" t))
+  (define-key +tree-sitter-goto-previous-map "F" (+tree-sitter-goto-textobj "call.outer" t))
+  (define-key +tree-sitter-goto-previous-map "C" (+tree-sitter-goto-textobj "class.outer" t))
+  (define-key +tree-sitter-goto-previous-map "c" (+tree-sitter-goto-textobj "comment.outer" t))
+  (define-key +tree-sitter-goto-previous-map "v" (+tree-sitter-goto-textobj "conditional.outer" t))
+  (define-key +tree-sitter-goto-previous-map "l" (+tree-sitter-goto-textobj "loop.outer" t))
+
+  (define-key +tree-sitter-goto-next-map "a" (+tree-sitter-goto-textobj "parameter.outer"))
+  (define-key +tree-sitter-goto-next-map "f" (+tree-sitter-goto-textobj "function.outer"))
+  (define-key +tree-sitter-goto-next-map "F" (+tree-sitter-goto-textobj "call.outer"))
+  (define-key +tree-sitter-goto-next-map "C" (+tree-sitter-goto-textobj "class.outer"))
+  (define-key +tree-sitter-goto-next-map "c" (+tree-sitter-goto-textobj "comment.outer"))
+  (define-key +tree-sitter-goto-next-map "v" (+tree-sitter-goto-textobj "conditional.outer"))
+  (define-key +tree-sitter-goto-next-map "l" (+tree-sitter-goto-textobj "loop.outer")))
+
+;; which-key настройка (опционально)
+(with-eval-after-load 'which-key
+  (setq which-key-allow-multiple-replacements t)
+  (add-to-list 'which-key-replacement-alist
+               '((nil . "\\`+?evil-textobj-tree-sitter-function--\\(.*\\)\\(?:.inner\\|.outer\\)")
+                 . (nil . "\\1"))))
+
+
+#+end_src
+* YASNIPPET
+YASnippet is a template system for Emacs. It allows you to type an abbreviation and automatically expand it into function templates. Bundled language templates include: C, C++, C#, Perl, Python, Ruby, SQL, LaTeX, HTML, CSS and more. The snippet syntax is inspired from TextMate's syntax, you can even import most TextMate templates to YASnippet. 
+#+begin_src emacs-lisp
+(use-package yasnippet
+  :ensure t         ; Install yasnippet if not already present
+  :defer t          ; Defer loading for faster startup, loads when first needed
+  :bind ("M-/" . yas-expand) ; Optional: Bind M-/ to manually expand snippet
+  :config
+  ;; Code here runs AFTER yasnippet is loaded
+
+  (yas-global-mode 1) ; Enable yasnippet globally in all buffers
+
+  ;; Optional: Add a custom directory for your own snippets
+  ;; Replace "~/my-snippets" with the actual path to your custom snippets directory
+  ;; (yas-add-dir "~/my-snippets")
+
+  ;; Optional: If you have snippets organized by major mode outside of default locations
+  ;; (yas-add-dir "/path/to/more/snippets/" 'recursive)
+
+  ;; Optional: Customize snippet indentation behavior (e.g., inherit parent)
+  ;; (setq yas-indent-line 'auto)
+
+  ;; Optional: Choose when snippets should be candidates for expansion
+  ;; 't (default): Always a candidate if prefix matches
+  ;; 'real-prefix: Only if the full snippet name is typed
+  ;; 'no-prefix: Never automatically, must use yas-expand
+  ;; (setq yas-trigger-key 'tab) ; Default trigger is TAB after snippet name
+  )
+#+end_src
+
+* VUNDO
+#+begin_src emacs-lisp
+(use-package vundo
+  :ensure t
+  :diminish
+  ;; :bind* (("C-c _" . vundo))
+  :custom (vundo-glyph-alist vundo-unicode-symbols))
+#+end_src
+* WHICH-KEY
+#+begin_src emacs-lisp
+(use-package which-key
+  :init
+  (which-key-mode 1)
+  :config
+  (setq which-key-side-window-location 'bottom
+  which-key-sort-order #'which-key-key-order-alpha
+  which-key-sort-uppercase-first nil
+  which-key-add-column-padding 1
+  which-key-max-display-columns nil
+  which-key-min-display-lines 6
+  which-key-side-window-slot -10
+  which-key-side-window-max-height 0.25
+  which-key-idle-delay 0.8
+  which-key-max-description-length 25
+  which-key-allow-imprecise-window-fit nil
+  which-key-separator " → " 
+ )) 
+#+end_src
+
