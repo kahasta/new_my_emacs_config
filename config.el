@@ -39,6 +39,9 @@
     ;; (setq evil-collection-mode-list '(dashboard dired ibuffer eshell help-mode magit org))
     (evil-collection-init))
 
+(with-eval-after-load 'lsp-mode
+  (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
+
 (defun my/reload-config ()
   "Reload Emacs configuration safely."
   (interactive)
@@ -46,11 +49,11 @@
   (load user-init-file nil 'nomessage)
   (message "Init file reloaded!"))
 
-(defun my/sudo-edit ()
- "Edit file as root with explicit bash shell"
- (interactive)
- (let ((file (or buffer-file-name (error "Not visiting a file"))))
-   (find-file (format "/sudo::%s" file))))
+ (defun my/sudo-edit ()
+  "Edit file as root with explicit bash shell"
+  (interactive)
+  (let ((file (or buffer-file-name (error "Not visiting a file"))))
+    (find-file (format "/sudo::%s" file))))
 
 (use-package general
   :ensure t
@@ -101,8 +104,10 @@
 
   (kahasta/leader-keys
     "d" '(:ignore t :wk "Dired")
+    ;; "d d" '(dirvish :wk "Open dirvish")
     "d d" '(dired :wk "Open dired")
     "d j" '(dired-jump :wk "Dired jump to current")
+    "d v" '(peep-dired :wk "Peep dired toggle")
     ;; "d n" '(neotree-toggle :wk "Open directory in neotree")
     )
 
@@ -122,6 +127,7 @@
 
   (kahasta/leader-keys
     "g" '(:ignore t :wk "go to")
+    "g g" '(magit-status :wk "Magit status")
     "g c" '(avy-goto-char :wk "Jump to char"))
 
   (kahasta/leader-keys
@@ -157,7 +163,10 @@
     "m d t" '(org-time-stamp :wk "Org time stamp"))
 
   (kahasta/leader-keys
-    "p" '(projectile-command-map :wk "Projectile"))
+    "p" '(:ignore t :wk "Projectile")
+    "p p" '(projectile-command-map :wk "Projectile")
+    "p f" '(projectile-find-file :wk "Find file")
+)
   
   (kahasta/leader-keys
     "o" '(:ignore t :wk "Open")
@@ -170,6 +179,7 @@
   (kahasta/leader-keys
     "t" '(:ignore t :wk "Toggle")
     "t a" '(aggressive-indent-mode :wk "Aggressive-indent toggle")
+    "t e" '(eldoc-box-hover-mode :wk "Eldoc box hover toggle")
     "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
     "t T" '(visual-line-mode :wk "Toggle truncated lines")
     "t t" '(load-theme :wk "Load theme"))
@@ -357,10 +367,66 @@ one, an error is signaled."
   :bind
   ("C-<tab>" . centaur-tabs-forward))
 
+(use-package yaml-mode 
+  :ensure t
+  :defer t)
+(use-package dockerfile-mode 
+  :ensure t
+  :defer t)
+(use-package toml-mode 
+  :ensure t
+  :defer t)
+(use-package dhall-mode
+  :ensure t)
+(use-package terraform-mode 
+  :ensure t
+  :defer t)
+
 (use-package company
   :ensure t
+  :hook (after-init . global-company-mode)
   :defer 2
   :diminish
+  :init
+  (setq company-minimum-prefix-length 1
+        company-tooltip-limit 16
+        company-tooltip-align-annotations t
+        company-require-match 'never
+        company-idle-delay 0.2
+        company-global-modes
+        '(not erc-mode
+              circe-mode
+              message-mode
+              help-mode
+              gud-mode
+              vterm-mode)
+        company-frontends
+        '(company-pseudo-tooltip-frontend  ; always show candidates in overlay tooltip
+          company-echo-metadata-frontend)  ; show selected candidate docs in echo area
+
+        ;; Buffer-local backends will be computed when loading a major mode, so
+        ;; only specify a global default here.
+        company-backends '(company-capf)
+
+        ;; These auto-complete the current selection when
+        ;; `company-auto-commit-chars' is typed. This is too magical. We
+        ;; already have the much more explicit RET and TAB.
+        company-auto-commit nil
+
+        ;; Only search the current buffer for `company-dabbrev' (a backend that
+        ;; suggests text your open buffers). This prevents Company from causing
+        ;; lag once you have a lot of buffers open.
+        company-dabbrev-other-buffers nil
+        ;; Make `company-dabbrev' fully case-sensitive, to improve UX with
+        ;; domain-specific words with particular casing.
+        company-dabbrev-ignore-case nil
+        company-dabbrev-downcase nil)
+  :config
+  (with-eval-after-load 'eldoc
+    (eldoc-add-command 'company-complete-selection
+                       'company-complete-common
+                       'company-capf
+                       'company-abort))
   :custom
   (company-dabbrev-downcase nil) ; не понижать регистр при дополнении
   (company-selection-wrap-around t) ; циклическая навигация
@@ -378,7 +444,6 @@ one, an error is signaled."
   :diminish
   :hook (company-mode . company-box-mode))
 
-
 (use-package company-quickhelp
   :ensure t
   :after company
@@ -386,6 +451,10 @@ one, an error is signaled."
   :config
   (setq company-quickhelp-delay .2)
 )
+
+(with-eval-after-load 'company-files
+  ;; Fix `company-files' completion for org file:* links
+  (add-to-list 'company-files--regexps "file:\\(\\(?:\\.\\{1,2\\}/\\|~/\\|/\\)[^\]\n]*\\)"))
 
 (use-package dashboard
   :ensure t 
@@ -408,9 +477,17 @@ one, an error is signaled."
   :config
   (dashboard-setup-startup-hook))
 
+(use-package diff-hl
+  :ensure t
+  :init
+  (require 'diff-hl-flydiff)
+  :config
+  (diff-hl-flydiff-mode))
+
 (use-package dired-open
   :ensure t
   :config
+  (setf dired-kill-when-opening-new-dired-buffer t)
   (setq dired-open-extensions '(("gif" . "sxiv")
                                 ("jpg" . "sxiv")
                                 ("jpeg" . "sxiv")
@@ -420,15 +497,43 @@ one, an error is signaled."
                                 ("mp4" . "mpv"))))
 
 (use-package peep-dired
+  :ensure t
   :after dired
   :hook (evil-normalize-keymaps . peep-dired-hook)
   :config
-    (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
-    (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
-    (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
-    (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
-    (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
-)
+  (evil-define-key 'normal dired-mode-map
+    "h" 'dired-up-directory
+    "l" 'dired-open-file
+    "v" 'peep-dired)
+  
+  (evil-define-key 'normal peep-dired-mode-map
+    "j" 'peep-dired-next-file
+    "k" 'peep-dired-prev-file
+    "q" 'peep-dired-quit
+    "l" 'peep-dired-open-file)
+  ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
+  ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
+   (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  )
+
+
+
+;; (use-package dirvish
+;;   :ensure t
+;;   :after (dired peep-dired)
+;;   :init
+;;   (dirvish-override-dired-mode)
+;;   :config
+;;   (setq dirvish-mode-line-format
+;;         '(:left (sort file-time " " file-size symlink) 
+;;         :right (omit yank index))
+  
+;;   ;; Интеграция с peep-dired
+;;   (add-hook 'dirvish-setup-hook
+;;             (lambda ()
+;;               (define-key dirvish-mode-map (kbd "v") 'peep-dired)))))
 
 (use-package diminish :ensure t)
 
@@ -478,6 +583,31 @@ one, an error is signaled."
   (setq eglot-autoshutdown t
         eglot-send-changes-idle-time 0.5))
 
+;; helpful — улучшенные describe-функции
+(use-package helpful
+  :ensure t
+  :bind (([remap describe-function] . helpful-callable)
+         ([remap describe-variable] . helpful-variable)
+         ([remap describe-symbol]   . helpful-symbol)
+         ([remap describe-key]      . helpful-key)))
+
+;; eldoc-box — всплывающая документация
+(use-package eldoc-box
+  :ensure t
+  :hook ((prog-mode . eldoc-box-hover-mode)
+         (emacs-lisp-mode . eldoc-box-hover-mode))
+  :custom
+  (eldoc-box-clear-with-C-g t)         ;; закрывать по C-g
+  (eldoc-box-max-pixel-width 600)
+  (eldoc-box-only-multi-line t)        ;; показывать, только если есть что показать
+  (eldoc-echo-area-use-multiline-p nil)) ;; отключить echo-area
+;; Опционально: embak для контекстных действий
+(use-package embark
+  :ensure t
+  :bind
+  (("C-." . embark-act)
+   ("C-h B" . embark-bindings)))
+
 (use-package flycheck
   :ensure t
   :defer t
@@ -490,7 +620,7 @@ one, an error is signaled."
   (setq elisp-flymake-byte-compile-load-path load-path)
   :hook ((emacs-lisp-mode . flymake-mode)))
 
-(setq font-size 140)
+  (setq font-size 140)
   (add-hook 'after-init-hook
   	  (lambda ()
   (set-face-attribute 'default nil
@@ -534,10 +664,10 @@ one, an error is signaled."
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 
-(global-display-line-numbers-mode 1)
-(global-visual-line-mode t)
+  (global-display-line-numbers-mode 1)
+  (global-visual-line-mode t)
 
-(use-package ivy
+   (use-package ivy
      :ensure t
      :demand t
      :bind
@@ -668,12 +798,28 @@ one, an error is signaled."
 	marginalia-field-width 100)
   (marginalia-mode 1))
 
-
-
 (use-package toc-org
   :ensure t
   :commands toc-org-enable
   :init (add-hook 'org-mode-hook 'toc-org-enable))
+
+;; В org-mode в целом
+(add-hook 'org-mode-hook #'company-mode)
+(setq org-src-fontify-natively t    ;; Подсветка синтаксиса прямо в org
+      org-src-tab-acts-natively t   ;; TAB работает как в коде
+      org-hide-block-startup nil    ;; Показывать блоки при открытии
+      org-src-preserve-indentation t) ;; Не менять отступы
+
+;; Не открывать отдельный буфер при нажатии C-c '
+(setq org-src-window-setup 'current-window)
+
+;; Внутри блоков кода (emacs-lisp, python и т.д.)
+(defun my/org-src-setup ()
+  "Включить company внутри org src edit buffer."
+  (when (derived-mode-p 'prog-mode)
+  (company-mode 1)))
+(add-hook 'org-src-mode-hook #'my/org-src-setup)
+(message "org-mode setup company completed.")
 
 (add-hook 'org-mode-hook 'org-indent-mode)
 (use-package org-bullets :ensure t)
@@ -690,61 +836,138 @@ one, an error is signaled."
   (setq projectile-completion-system 'ivy)
   (projectile-mode 1))
 
+(use-package poly-org
+  :ensure t
+  :mode ("\\.org\\'" . poly-org-mode))
+
+(use-package posframe
+  :ensure t)
+
+ (with-eval-after-load 'posframe
+(defvar my/doc-posframe-buffer "*doc-posframe*")
+
+(defun my/hide-doc-posframe ()
+  "Скрыть всплывающее окно с документацией."
+  (interactive)
+  (posframe-hide my/doc-posframe-buffer))
+
+(defun my/show-doc-posframe ()
+  "Показать документацию во всплывающем окне posframe."
+  (interactive)
+  (let* ((sym (symbol-at-point))
+         (doc (or (and sym (documentation sym)) "Нет документации.")))
+    (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
+      (erase-buffer)
+      (insert doc)
+      (goto-char (point-min))
+      (read-only-mode 1)
+      (use-local-map (let ((map (make-sparse-keymap)))
+                       (define-key map (kbd "C-g") #'my/hide-doc-posframe)
+                       map)))
+    (posframe-show my/doc-posframe-buffer
+                   :string nil ;; nil — использовать содержимое буфера
+                   :position (point)
+                   :internal-border-width 10
+                   :border-width 1
+                   :background-color (face-background 'tooltip nil t)
+                   :accept-focus nil ;; без фокуса — иначе posframe зависнет
+                   :timeout nil)))
+
+;; Привязка в evil-normal-state
+(define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe))
+
+;; (with-eval-after-load 'posframe
+
+;; (defun my/show-doc-popup ()
+;;   (interactive)
+;;   (when-let ((doc (or (helpful-symbol (symbol-at-point))
+;;                       (documentation (symbol-at-point)))))
+;;     (posframe-show " *doc*"
+;;                    :string doc
+;;                    :position (point)
+;;                    :timeout 5)))
+
+;; (define-key evil-normal-state-map (kbd "K") #'my/show-doc-popup))
+
+;; (with-eval-after-load 'posframe
+;;   (defun my/show-doc-buffer ()
+;;   "Показать документацию по символу под курсором во всплывающем окне."
+;;   (interactive)
+;;   (let* ((sym (symbol-at-point))
+;;          (doc (or (and sym (documentation sym)) "Нет документации."))
+;;          (buf (get-buffer-create "*doc-popup*")))
+;;     (with-current-buffer buf
+;;       (read-only-mode -1)
+;;       (erase-buffer)
+;;       (insert doc)
+;;       (goto-char (point-min))
+;;       (special-mode)
+;;       (local-set-key (kbd "C-g") #'my/close-doc-buffer))
+;;     (pop-to-buffer buf '((display-buffer-at-bottom)))
+;;     ;; автофокус происходит за счёт pop-to-buffer
+;;     ))
+
+;; (defun my/close-doc-buffer ()
+;;   "Закрыть всплывающее окно с документацией."
+;;   (interactive)
+;;   (quit-window t))  ;; Убирает окно и не убивает буфер
+;; (define-key evil-normal-state-map (kbd "K") #'my/show-doc-buffer))
+
 (use-package rainbow-delimiters
   :ensure t
   :hook (prog-mode . rainbow-delimiters-mode)
   :config
   (setq rainbow-delimiters-max-face-count 5))
 
-(use-package rainbow-mode
-  :ensure t
-  :hook 
-  ((org-mode prog-mode) . rainbow-mode))
+  (use-package rainbow-mode
+    :ensure t
+    :hook 
+    ((org-mode prog-mode) . rainbow-mode))
 
-(use-package eshell-syntax-highlighting
+  (use-package eshell-syntax-highlighting
+    :ensure t
+    :after esh-mode
+    :config
+    (eshell-syntax-highlighting-global-mode +1))
+
+  ;; eshell-syntax-highlighting -- adds fish/zsh-like syntax highlighting.
+  ;; eshell-rc-script -- your profile for eshell; like a bashrc for eshell.
+  ;; eshell-aliases-file -- sets an aliases file for the eshell.
+    
+  (setq eshell-rc-script (concat user-emacs-directory "eshll/profile") ;; в этом файле автозапуск команд
+        eshell-aliases-file (concat user-emacs-directory "eshell/aliases")
+        eshell-history-size 5000
+        eshell-buffer-maximum-lines 5000
+        eshell-hist-ignoredups t
+        eshell-scroll-to-bottom-on-input t
+        eshell-destroy-buffer-when-process-dies t
+        eshell-visual-commands'("bash" "fish" "nushell" "htop" "ssh" "top" "zsh"))
+
+  (use-package vterm
   :ensure t
-  :after esh-mode
   :config
-  (eshell-syntax-highlighting-global-mode +1))
+  (setq shell-file-name "/usr/bin/nu"
+        vterm-max-scrollback 5000))
 
-;; eshell-syntax-highlighting -- adds fish/zsh-like syntax highlighting.
-;; eshell-rc-script -- your profile for eshell; like a bashrc for eshell.
-;; eshell-aliases-file -- sets an aliases file for the eshell.
-  
-(setq eshell-rc-script (concat user-emacs-directory "eshll/profile") ;; в этом файле автозапуск команд
-      eshell-aliases-file (concat user-emacs-directory "eshell/aliases")
-      eshell-history-size 5000
-      eshell-buffer-maximum-lines 5000
-      eshell-hist-ignoredups t
-      eshell-scroll-to-bottom-on-input t
-      eshell-destroy-buffer-when-process-dies t
-      eshell-visual-commands'("bash" "fish" "nushell" "htop" "ssh" "top" "zsh"))
-
-(use-package vterm
-:ensure t
-:config
-(setq shell-file-name "/usr/bin/nu"
-      vterm-max-scrollback 5000))
-
-(use-package vterm-toggle
-  :ensure t
-  :after vterm
-  :config
-  (setq vterm-toggle-fullscreen-p nil)
-  (setq vterm-toggle-scope 'project)
-  (add-to-list 'display-buffer-alist
-               '((lambda (buffer-or-name _)
-                     (let ((buffer (get-buffer buffer-or-name)))
-                       (with-current-buffer buffer
-                         (or (equal major-mode 'vterm-mode)
-                             (string-prefix-p vterm-buffer-name (buffer-name buffer))))))
-                  (display-buffer-reuse-window display-buffer-at-bottom)
-                  ;;(display-buffer-reuse-window display-buffer-in-direction)
-                  ;;display-buffer-in-direction/direction/dedicated is added in emacs27
-                  ;;(direction . bottom)
-                  ;;(dedicated . t) ;dedicated is supported in emacs27
-                  (reusable-frames . visible)
-                  (window-height . 0.3))))
+  (use-package vterm-toggle
+    :ensure t
+    :after vterm
+    :config
+    (setq vterm-toggle-fullscreen-p nil)
+    (setq vterm-toggle-scope 'project)
+    (add-to-list 'display-buffer-alist
+                 '((lambda (buffer-or-name _)
+                       (let ((buffer (get-buffer buffer-or-name)))
+                         (with-current-buffer buffer
+                           (or (equal major-mode 'vterm-mode)
+                               (string-prefix-p vterm-buffer-name (buffer-name buffer))))))
+                    (display-buffer-reuse-window display-buffer-at-bottom)
+                    ;;(display-buffer-reuse-window display-buffer-in-direction)
+                    ;;display-buffer-in-direction/direction/dedicated is added in emacs27
+                    ;;(direction . bottom)
+                    ;;(dedicated . t) ;dedicated is supported in emacs27
+                    (reusable-frames . visible)
+                    (window-height . 0.3))))
 
 (use-package smartparens
   :ensure t
@@ -757,37 +980,112 @@ one, an error is signaled."
   (sp-local-pair 'emacs-lisp-mode "'" nil :actions nil)
   (sp-local-pair 'web-mode "<" ">"))
 
-(use-package doom-themes
-  :ensure t
-  :config
-  ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-gruvbox t)
+    (use-package doom-themes
+      :ensure t
+      :config
+      ;; Global settings (defaults)
+      (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+            doom-themes-enable-italic t) ; if nil, italics is universally disabled
+      (load-theme 'doom-gruvbox t)
 
-  ;; Enable flashing mode-line on errors
-  (doom-themes-visual-bell-config)
-  ;; Enable custom neotree theme (nerd-icons must be installed!)
-  (doom-themes-neotree-config)
-  ;; or for treemacs users
-  (setq doom-themes-treemacs-theme "doom-one") ; use "doom-colors" for less minimal icon theme
-  (doom-themes-treemacs-config)
-  ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config))
+      ;; Enable flashing mode-line on errors
+      (doom-themes-visual-bell-config)
+      ;; Enable custom neotree theme (nerd-icons must be installed!)
+      (doom-themes-neotree-config)
+      ;; or for treemacs users
+      (setq doom-themes-treemacs-theme "doom-one") ; use "doom-colors" for less minimal icon theme
+      (doom-themes-treemacs-config)
+      ;; Corrects (and improves) org-mode's native fontification.
+      (doom-themes-org-config))
 
-  (use-package doom-modeline
-    :ensure t
-    :init (doom-modeline-mode 1)
+      (use-package doom-modeline
+        :ensure t
+        :init (doom-modeline-mode 1)
 	:config
 	(setq doom-modeline-height 30
 	      doom-modeline-bar-width 5
 	      doom-modeline-persp-name t
 	      doom-modeline-persp-icon t))
 
+;; (use-package tree-sitter
+;;   :ensure t
+;;   :init
+;;   (global-tree-sitter-mode 1))
+;; Установка tree-sitter
+
+(use-package tree-sitter-langs
+  :ensure t)
+
+;; Tree-sitter
 (use-package tree-sitter
-  :ensure t
-  :init
-  (global-tree-sitter-mode 1))
+  :defer t
+  :config
+  (use-package tree-sitter-langs
+    :ensure t)
+  (setq tree-sitter-debug-jump-buttons t
+        tree-sitter-debug-highlight-jump-region t))
+
+;; evil-textobj-tree-sitter
+(use-package evil-textobj-tree-sitter
+  :defer t
+  :after tree-sitter
+  :config
+  (defvar +tree-sitter-inner-text-objects-map (make-sparse-keymap))
+  (defvar +tree-sitter-outer-text-objects-map (make-sparse-keymap))
+  (defvar +tree-sitter-goto-previous-map (make-sparse-keymap))
+  (defvar +tree-sitter-goto-next-map (make-sparse-keymap))
+
+  (evil-define-key '(visual operator) 'tree-sitter-mode
+    "i" +tree-sitter-inner-text-objects-map
+    "a" +tree-sitter-outer-text-objects-map)
+  (evil-define-key 'normal 'tree-sitter-mode
+    "[g" +tree-sitter-goto-previous-map
+    "]g" +tree-sitter-goto-next-map)
+
+  (defun +tree-sitter-get-textobj (query)
+    `(evil-textobj-tree-sitter-get-textobj ,query))
+
+  (defun +tree-sitter-goto-textobj (query &optional backwards)
+    `(evil-textobj-tree-sitter-goto-textobj ,query ,backwards))
+
+  ;; Привязки клавиш (map!)
+  (define-key +tree-sitter-inner-text-objects-map "A" (+tree-sitter-get-textobj '("parameter.inner" "call.inner")))
+  (define-key +tree-sitter-inner-text-objects-map "f" (+tree-sitter-get-textobj "function.inner"))
+  (define-key +tree-sitter-inner-text-objects-map "F" (+tree-sitter-get-textobj "call.inner"))
+  (define-key +tree-sitter-inner-text-objects-map "C" (+tree-sitter-get-textobj "class.inner"))
+  (define-key +tree-sitter-inner-text-objects-map "v" (+tree-sitter-get-textobj "conditional.inner"))
+  (define-key +tree-sitter-inner-text-objects-map "l" (+tree-sitter-get-textobj "loop.inner"))
+
+  (define-key +tree-sitter-outer-text-objects-map "A" (+tree-sitter-get-textobj '("parameter.outer" "call.outer")))
+  (define-key +tree-sitter-outer-text-objects-map "f" (+tree-sitter-get-textobj "function.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "F" (+tree-sitter-get-textobj "call.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "C" (+tree-sitter-get-textobj "class.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "c" (+tree-sitter-get-textobj "comment.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "v" (+tree-sitter-get-textobj "conditional.outer"))
+  (define-key +tree-sitter-outer-text-objects-map "l" (+tree-sitter-get-textobj "loop.outer"))
+
+  (define-key +tree-sitter-goto-previous-map "a" (+tree-sitter-goto-textobj "parameter.outer" t))
+  (define-key +tree-sitter-goto-previous-map "f" (+tree-sitter-goto-textobj "function.outer" t))
+  (define-key +tree-sitter-goto-previous-map "F" (+tree-sitter-goto-textobj "call.outer" t))
+  (define-key +tree-sitter-goto-previous-map "C" (+tree-sitter-goto-textobj "class.outer" t))
+  (define-key +tree-sitter-goto-previous-map "c" (+tree-sitter-goto-textobj "comment.outer" t))
+  (define-key +tree-sitter-goto-previous-map "v" (+tree-sitter-goto-textobj "conditional.outer" t))
+  (define-key +tree-sitter-goto-previous-map "l" (+tree-sitter-goto-textobj "loop.outer" t))
+
+  (define-key +tree-sitter-goto-next-map "a" (+tree-sitter-goto-textobj "parameter.outer"))
+  (define-key +tree-sitter-goto-next-map "f" (+tree-sitter-goto-textobj "function.outer"))
+  (define-key +tree-sitter-goto-next-map "F" (+tree-sitter-goto-textobj "call.outer"))
+  (define-key +tree-sitter-goto-next-map "C" (+tree-sitter-goto-textobj "class.outer"))
+  (define-key +tree-sitter-goto-next-map "c" (+tree-sitter-goto-textobj "comment.outer"))
+  (define-key +tree-sitter-goto-next-map "v" (+tree-sitter-goto-textobj "conditional.outer"))
+  (define-key +tree-sitter-goto-next-map "l" (+tree-sitter-goto-textobj "loop.outer")))
+
+;; which-key настройка (опционально)
+(with-eval-after-load 'which-key
+  (setq which-key-allow-multiple-replacements t)
+  (add-to-list 'which-key-replacement-alist
+               '((nil . "\\`+?evil-textobj-tree-sitter-function--\\(.*\\)\\(?:.inner\\|.outer\\)")
+                 . (nil . "\\1"))))
 
 (use-package yasnippet
   :ensure t         ; Install yasnippet if not already present
