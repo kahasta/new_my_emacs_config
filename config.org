@@ -1,4 +1,4 @@
-k#+TITLE: My Emacs config
+#+TITLE: My Emacs config
 #+AUTHOR: kahasta
 #+DESCRIPTION: my personal emacs config
 #+STARTUP: showeverything
@@ -787,40 +787,58 @@ Install luacheck from your Linux distro’s repositories for flycheck to work co
 Settings fonts.
 
 #+begin_src emacs-lisp
-(defun my/setup-font ()
-(interactive)
-(when (display-graphic-p)
- (setq font-size 140)
-  (set-face-attribute 'default nil
-  		    :font "JetBrains Mono"
-  		    :height font-size
-  		    :weight 'medium)
-  (set-face-attribute 'variable-pitch nil
-  		    :font "Noto Sans"
-  		    :height (+ font-size 1)
-  		    :weight 'medium)
-  (set-face-attribute 'fixed-pitch nil
-  		    :font "JetBrains Mono"
-  		    :height font-size
-  		    :weight 'medium)
-  (set-face-attribute 'font-lock-comment-face nil
-  		    :slant 'italic)
-  (set-face-attribute 'font-lock-keyword-face nil
-  		    :slant 'italic)
-(let ((font-size "14"))
-  (add-to-list 'initial-frame-alist '(font . (concat "JetBrains Mono-" font-size)))
-  (add-to-list 'default-frame-alist '(font . (concat "JetBrains Mono-" font-size))))
 
-  (setq-default line-spacing 0.12)
-  ;;(redraw-display)
-  (message "Font settings applied")
-  (message "Current font: %s" (face-attribute 'default :font))
-  ))
+  (defun my/setup-my-fonts ()
+    "Настройка шрифтов" 
+    (interactive)
+    (let ((font-size 15)  ; Размер по умолчанию
+          (main-font "JetBrains Mono")
+          (var-font "Noto Serif")
+	        (line-spacing-size 0.12))
+      
+      ;; Проверка графического режима
+      (when (display-graphic-p)
+        ;; Основные настройки шрифтов
+        (set-face-attribute 'default nil
+                           :font main-font
+                           :height (* 10 font-size)  
+                           :weight 'medium)
+        
+        (set-face-attribute 'variable-pitch nil
+                           :font var-font
+                           :height (* 10 (+ font-size 1)))
+        
+        (set-face-attribute 'fixed-pitch nil
+                           :font main-font
+                           :height (* 10 font-size))
+        
+        ;; Настройки для фреймов
+        (add-to-list 'initial-frame-alist 
+                    `(font . ,(format "%s-%d" main-font font-size)))
+        (add-to-list 'default-frame-alist 
+                    `(font . ,(format "%s-%d" main-font font-size)))
+        
+        ;; Стили для комментариев и ключевых слов
+        (set-face-attribute 'font-lock-comment-face nil 
+			    :slant 'italic
+			    :font var-font)
+        (set-face-attribute 'font-lock-keyword-face nil 
+			    :slant 'italic
+			    :font var-font)
+        
+        ;; Межстрочный интервал
+        (setq-default line-spacing line-spacing-size)))
 
-(add-hook 'after-init-hook 'my/setup-font)
-(add-hook 'emacs-startup-hook 'my/setup-font)
+    ;; Инициализация при загрузке
+    (message "Fonts initializing complete")
+  )
+
+
+  (add-hook 'after-init-hook 'my/setup-my-fonts)
+  ;; (add-hook 'emacs-startup-hook 'my/setup-font)
 
 #+end_src
+
 
 ** Zooming In/Out
 #+begin_src emacs-lisp
@@ -1057,11 +1075,14 @@ Emacs has built-in programming language modes for Lisp, Scheme, DSSSL, Ada, ASM,
 ;; Внутри блоков кода (emacs-lisp, python и т.д.)
 (defun my/org-src-setup ()
   "Включить company внутри org src edit buffer."
-  (when (derived-mode-p 'prog-mode)
+  (when (apply #'derived-mode-p '(prog-mode org-mode))
   (company-mode 1)))
 (add-hook 'org-src-mode-hook #'my/org-src-setup)
 (message "org-mode setup company completed.")
 #+end_src
+
+#+RESULTS:
+: org-mode setup company completed.
 
 ** Enabling Org Bullets
 Org-bullets gives us attractive bullets rather than asterisks.
