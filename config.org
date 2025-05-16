@@ -869,7 +869,9 @@ Enchance emacs ui.
 ** Display Line Nums and Truncated Lines
 #+begin_src emacs-lisp
   (global-display-line-numbers-mode 1)
+  (column-number-mode 1)
   (global-visual-line-mode t)
+  (delete-selection-mode 1) 
 #+end_src
 
 * IVY (COUNSEL)
@@ -1127,7 +1129,7 @@ Projectile is a project interaction library for Emacs.  It should be noted that 
 (defun my/hide-doc-posframe ()
   "Скрыть всплывающее окно с документацией."
   (interactive)
-  (posframe-hide my/doc-posframe-buffer))
+  (posframe-hide-all))
 
 (defun my/show-doc-posframe ()
   "Показать документацию во всплывающем окне posframe."
@@ -1135,10 +1137,11 @@ Projectile is a project interaction library for Emacs.  It should be noted that 
   (let* ((sym (symbol-at-point))
          (doc (or (and sym (documentation sym)) "Нет документации.")))
     (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
+      (let ((inhibit-read-only t))
       (erase-buffer)
       (insert doc)
       (goto-char (point-min))
-      (read-only-mode 1)
+      (read-only-mode 1))
       (use-local-map (let ((map (make-sparse-keymap)))
                        (define-key map (kbd "C-g") #'my/hide-doc-posframe)
                        map)))
@@ -1152,7 +1155,8 @@ Projectile is a project interaction library for Emacs.  It should be noted that 
                    :timeout nil)))
 
 ;; Привязка в evil-normal-state
-(define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe))
+(define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
+(define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe))
 
 ;; (with-eval-after-load 'posframe
 
