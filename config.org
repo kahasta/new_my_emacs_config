@@ -239,6 +239,7 @@
   (kahasta/leader-keys
     "l" '(:ignore t :wk "Lsp")
     "l f" '(format-all-buffer :wk "Formatting buffer")
+    "l o" '(my/org-format-src-block :wk "Formatting org-mode buffer")
     )
 
   (kahasta/leader-keys
@@ -250,10 +251,8 @@
     "m d t" '(org-time-stamp :wk "Org time stamp"))
 
   (kahasta/leader-keys
-    "p" '(:ignore t :wk "Projectile")
-    "p p" '(projectile-command-map :wk "Projectile")
-    "p f" '(projectile-find-file :wk "Find file")
-)
+    "p" '(projectile-command-map :wk "Projectile")
+    )
   
   (kahasta/leader-keys
     "o" '(:ignore t :wk "Open")
@@ -854,6 +853,14 @@ Settings fonts.
   :ensure t
   :hook ((prog-mode . format-all-ensure-formatter)
          (before-save . format-all-buffer)))
+
+(defun my/org-format-src-block ()
+  "Форматировать текущий блок кода в Org-mode."
+  (interactive)
+  (when (org-in-src-block-p)
+    (org-edit-special)
+    (indent-region (point-min) (point-max))
+    (org-edit-src-exit)))
 #+end_src
 
 * UI SETTINGS AND TWEAKS
@@ -1158,42 +1165,6 @@ Projectile is a project interaction library for Emacs.  It should be noted that 
 (define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
 (define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe))
 
-;; (with-eval-after-load 'posframe
-
-;; (defun my/show-doc-popup ()
-;;   (interactive)
-;;   (when-let ((doc (or (helpful-symbol (symbol-at-point))
-;;                       (documentation (symbol-at-point)))))
-;;     (posframe-show " *doc*"
-;;                    :string doc
-;;                    :position (point)
-;;                    :timeout 5)))
-
-;; (define-key evil-normal-state-map (kbd "K") #'my/show-doc-popup))
-
-;; (with-eval-after-load 'posframe
-;;   (defun my/show-doc-buffer ()
-;;   "Показать документацию по символу под курсором во всплывающем окне."
-;;   (interactive)
-;;   (let* ((sym (symbol-at-point))
-;;          (doc (or (and sym (documentation sym)) "Нет документации."))
-;;          (buf (get-buffer-create "*doc-popup*")))
-;;     (with-current-buffer buf
-;;       (read-only-mode -1)
-;;       (erase-buffer)
-;;       (insert doc)
-;;       (goto-char (point-min))
-;;       (special-mode)
-;;       (local-set-key (kbd "C-g") #'my/close-doc-buffer))
-;;     (pop-to-buffer buf '((display-buffer-at-bottom)))
-;;     ;; автофокус происходит за счёт pop-to-buffer
-;;     ))
-
-;; (defun my/close-doc-buffer ()
-;;   "Закрыть всплывающее окно с документацией."
-;;   (interactive)
-;;   (quit-window t))  ;; Убирает окно и не убивает буфер
-;; (define-key evil-normal-state-map (kbd "K") #'my/show-doc-buffer))
 
 #+end_src
 * RAINBOW DELIMITERS
