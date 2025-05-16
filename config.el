@@ -8,12 +8,7 @@
 (require 'magit-mod)
 ))
 
-;; (add-hook 'after-init-hook
-;;	  (lambda ()
-;;	    (progn
-;;	      (load-file "~/.my-emacs.d/init.el")
-;;	      (ignore (elpaca-process-queues))
-;;	    (message "Reload second"))))
+(setq org-element--cache-self-verify 'backtrace)
 
 (setq evil-want-keybinding nil)
 (setq evil-want-integration t)
@@ -49,11 +44,11 @@
   (load user-init-file nil 'nomessage)
   (message "Init file reloaded!"))
 
- (defun my/sudo-edit ()
-  "Edit file as root with explicit bash shell"
-  (interactive)
-  (let ((file (or buffer-file-name (error "Not visiting a file"))))
-    (find-file (format "/sudo::%s" file))))
+(defun my/sudo-edit ()
+ "Edit file as root with explicit bash shell"
+ (interactive)
+ (let ((file (or buffer-file-name (error "Not visiting a file"))))
+   (find-file (format "/sudo::%s" file))))
 
 (use-package general
   :ensure t
@@ -389,7 +384,8 @@ one, an error is signaled."
   :diminish
   :init
   (setq company-minimum-prefix-length 1
-        company-tooltip-limit 16
+        company-tooltip-limit 20
+	company-show-numbers t
         company-tooltip-align-annotations t
         company-require-match 'never
         company-idle-delay 0.2
@@ -400,13 +396,17 @@ one, an error is signaled."
               help-mode
               gud-mode
               vterm-mode)
-        company-frontends
-        '(company-pseudo-tooltip-frontend  ; always show candidates in overlay tooltip
-          company-echo-metadata-frontend)  ; show selected candidate docs in echo area
+        company-frontends '(company-pseudo-tooltip-frontend  ; always show candidates in overlay tooltip
+			    company-echo-metadata-frontend)  ; show selected candidate docs in echo area
 
         ;; Buffer-local backends will be computed when loading a major mode, so
         ;; only specify a global default here.
-        company-backends '(company-capf)
+        company-backends '(company-capf
+			   company-files
+			   company-dabbrev-code
+			   company-dabbrev
+			   company-keywords
+			   )
 
         ;; These auto-complete the current selection when
         ;; `company-auto-commit-chars' is typed. This is too magical. We
@@ -438,6 +438,13 @@ one, an error is signaled."
   (company-tooltip-align-annotations 't)
   (global-company-mode t))
 
+;; Расширенный вариант с company-flx (для гибкого фуззи-поиска)
+(use-package company-flx
+  :ensure t
+  :after company
+  :config
+  (company-flx-mode +1))
+
 (use-package company-box
   :ensure t
   :after company
@@ -451,7 +458,6 @@ one, an error is signaled."
   :config
   (setq company-quickhelp-delay .2)
 )
-
 (with-eval-after-load 'company-files
   ;; Fix `company-files' completion for org file:* links
   (add-to-list 'company-files--regexps "file:\\(\\(?:\\.\\{1,2\\}/\\|~/\\|/\\)[^\]\n]*\\)"))
@@ -620,16 +626,17 @@ one, an error is signaled."
   (setq elisp-flymake-byte-compile-load-path load-path)
   :hook ((emacs-lisp-mode . flymake-mode)))
 
-  (setq font-size 140)
-  (add-hook 'after-init-hook
-  	  (lambda ()
+(defun my/setup-font ()
+(interactive)
+(when (display-graphic-p)
+ (setq font-size 140)
   (set-face-attribute 'default nil
   		    :font "JetBrains Mono"
   		    :height font-size
   		    :weight 'medium)
   (set-face-attribute 'variable-pitch nil
   		    :font "Noto Sans"
-  		    :height (+ font-size 1) 
+  		    :height (+ font-size 1)
   		    :weight 'medium)
   (set-face-attribute 'fixed-pitch nil
   		    :font "JetBrains Mono"
@@ -639,16 +646,18 @@ one, an error is signaled."
   		    :slant 'italic)
   (set-face-attribute 'font-lock-keyword-face nil
   		    :slant 'italic)
-
-  (add-to-list 'initial-frame-alist '(font . "JetBrains Mono-11"))
-  (add-to-list 'default-frame-alist '(font . "JetBrains Mono-11"))
+(let ((font-size "14"))
+  (add-to-list 'initial-frame-alist '(font . (concat "JetBrains Mono-" font-size)))
+  (add-to-list 'default-frame-alist '(font . (concat "JetBrains Mono-" font-size))))
 
   (setq-default line-spacing 0.12)
-  (when (display-graphic-p)
-    (redraw-display))
-(message "Font settings applied")
-(message "Current font: %s" (face-attribute 'default :font))
-))
+  ;;(redraw-display)
+  (message "Font settings applied")
+  (message "Current font: %s" (face-attribute 'default :font))
+  ))
+
+(add-hook 'after-init-hook 'my/setup-font)
+(add-hook 'emacs-startup-hook 'my/setup-font)
 
 (global-set-key (kbd "C-=") 'text-scale-increase)
 (global-set-key (kbd "C--") 'text-scale-decrease)
@@ -664,10 +673,10 @@ one, an error is signaled."
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 
-  (global-display-line-numbers-mode 1)
-  (global-visual-line-mode t)
+(global-display-line-numbers-mode 1)
+(global-visual-line-mode t)
 
-   (use-package ivy
+(use-package ivy
      :ensure t
      :demand t
      :bind
@@ -836,10 +845,6 @@ one, an error is signaled."
   (setq projectile-completion-system 'ivy)
   (projectile-mode 1))
 
-(use-package poly-org
-  :ensure t
-  :mode ("\\.org\\'" . poly-org-mode))
-
 (use-package posframe
   :ensure t)
 
@@ -919,55 +924,55 @@ one, an error is signaled."
   :config
   (setq rainbow-delimiters-max-face-count 5))
 
-  (use-package rainbow-mode
-    :ensure t
-    :hook 
-    ((org-mode prog-mode) . rainbow-mode))
-
-  (use-package eshell-syntax-highlighting
-    :ensure t
-    :after esh-mode
-    :config
-    (eshell-syntax-highlighting-global-mode +1))
-
-  ;; eshell-syntax-highlighting -- adds fish/zsh-like syntax highlighting.
-  ;; eshell-rc-script -- your profile for eshell; like a bashrc for eshell.
-  ;; eshell-aliases-file -- sets an aliases file for the eshell.
-    
-  (setq eshell-rc-script (concat user-emacs-directory "eshll/profile") ;; в этом файле автозапуск команд
-        eshell-aliases-file (concat user-emacs-directory "eshell/aliases")
-        eshell-history-size 5000
-        eshell-buffer-maximum-lines 5000
-        eshell-hist-ignoredups t
-        eshell-scroll-to-bottom-on-input t
-        eshell-destroy-buffer-when-process-dies t
-        eshell-visual-commands'("bash" "fish" "nushell" "htop" "ssh" "top" "zsh"))
-
-  (use-package vterm
+(use-package rainbow-mode
   :ensure t
-  :config
-  (setq shell-file-name "/usr/bin/nu"
-        vterm-max-scrollback 5000))
+  :hook 
+  ((org-mode prog-mode) . rainbow-mode))
 
-  (use-package vterm-toggle
-    :ensure t
-    :after vterm
-    :config
-    (setq vterm-toggle-fullscreen-p nil)
-    (setq vterm-toggle-scope 'project)
-    (add-to-list 'display-buffer-alist
-                 '((lambda (buffer-or-name _)
-                       (let ((buffer (get-buffer buffer-or-name)))
-                         (with-current-buffer buffer
-                           (or (equal major-mode 'vterm-mode)
-                               (string-prefix-p vterm-buffer-name (buffer-name buffer))))))
-                    (display-buffer-reuse-window display-buffer-at-bottom)
-                    ;;(display-buffer-reuse-window display-buffer-in-direction)
-                    ;;display-buffer-in-direction/direction/dedicated is added in emacs27
-                    ;;(direction . bottom)
-                    ;;(dedicated . t) ;dedicated is supported in emacs27
-                    (reusable-frames . visible)
-                    (window-height . 0.3))))
+(use-package eshell-syntax-highlighting
+  :ensure t
+  :after esh-mode
+  :config
+  (eshell-syntax-highlighting-global-mode +1))
+
+;; eshell-syntax-highlighting -- adds fish/zsh-like syntax highlighting.
+;; eshell-rc-script -- your profile for eshell; like a bashrc for eshell.
+;; eshell-aliases-file -- sets an aliases file for the eshell.
+  
+(setq eshell-rc-script (concat user-emacs-directory "eshll/profile") ;; в этом файле автозапуск команд
+      eshell-aliases-file (concat user-emacs-directory "eshell/aliases")
+      eshell-history-size 5000
+      eshell-buffer-maximum-lines 5000
+      eshell-hist-ignoredups t
+      eshell-scroll-to-bottom-on-input t
+      eshell-destroy-buffer-when-process-dies t
+      eshell-visual-commands'("bash" "fish" "nushell" "htop" "ssh" "top" "zsh"))
+
+(use-package vterm
+:ensure t
+:config
+(setq shell-file-name "/usr/bin/nu"
+      vterm-max-scrollback 5000))
+
+(use-package vterm-toggle
+  :ensure t
+  :after vterm
+  :config
+  (setq vterm-toggle-fullscreen-p nil)
+  (setq vterm-toggle-scope 'project)
+  (add-to-list 'display-buffer-alist
+               '((lambda (buffer-or-name _)
+                     (let ((buffer (get-buffer buffer-or-name)))
+                       (with-current-buffer buffer
+                         (or (equal major-mode 'vterm-mode)
+                             (string-prefix-p vterm-buffer-name (buffer-name buffer))))))
+                  (display-buffer-reuse-window display-buffer-at-bottom)
+                  ;;(display-buffer-reuse-window display-buffer-in-direction)
+                  ;;display-buffer-in-direction/direction/dedicated is added in emacs27
+                  ;;(direction . bottom)
+                  ;;(dedicated . t) ;dedicated is supported in emacs27
+                  (reusable-frames . visible)
+                  (window-height . 0.3))))
 
 (use-package smartparens
   :ensure t
@@ -980,27 +985,27 @@ one, an error is signaled."
   (sp-local-pair 'emacs-lisp-mode "'" nil :actions nil)
   (sp-local-pair 'web-mode "<" ">"))
 
-    (use-package doom-themes
-      :ensure t
-      :config
-      ;; Global settings (defaults)
-      (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-            doom-themes-enable-italic t) ; if nil, italics is universally disabled
-      (load-theme 'doom-gruvbox t)
+(use-package doom-themes
+  :ensure t
+  :config
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+  (load-theme 'doom-gruvbox t)
 
-      ;; Enable flashing mode-line on errors
-      (doom-themes-visual-bell-config)
-      ;; Enable custom neotree theme (nerd-icons must be installed!)
-      (doom-themes-neotree-config)
-      ;; or for treemacs users
-      (setq doom-themes-treemacs-theme "doom-one") ; use "doom-colors" for less minimal icon theme
-      (doom-themes-treemacs-config)
-      ;; Corrects (and improves) org-mode's native fontification.
-      (doom-themes-org-config))
+  ;; Enable flashing mode-line on errors
+  (doom-themes-visual-bell-config)
+  ;; Enable custom neotree theme (nerd-icons must be installed!)
+  (doom-themes-neotree-config)
+  ;; or for treemacs users
+  (setq doom-themes-treemacs-theme "doom-one") ; use "doom-colors" for less minimal icon theme
+  (doom-themes-treemacs-config)
+  ;; Corrects (and improves) org-mode's native fontification.
+  (doom-themes-org-config))
 
-      (use-package doom-modeline
-        :ensure t
-        :init (doom-modeline-mode 1)
+  (use-package doom-modeline
+    :ensure t
+    :init (doom-modeline-mode 1)
 	:config
 	(setq doom-modeline-height 30
 	      doom-modeline-bar-width 5

@@ -1,4 +1,4 @@
-#+TITLE: My Emacs config
+k#+TITLE: My Emacs config
 #+AUTHOR: kahasta
 #+DESCRIPTION: my personal emacs config
 #+STARTUP: showeverything
@@ -52,7 +52,6 @@
   - [[#disable-electric-indent][Disable Electric Indent]]
   - [[#source-code-block-tag-expansion][Source Code Block Tag Expansion]]
 - [[#projectile][PROJECTILE]]
-- [[#poly-org][POLY-ORG]]
 - [[#posframe][POSFRAME]]
 - [[#rainbow-delimiters][RAINBOW DELIMITERS]]
 - [[#rainbow-mode][RAINBOW MODE]]
@@ -82,14 +81,10 @@
 (require 'magit-mod)
 ))
 #+end_src
+
 ** Init
 #+begin_src emacs-lisp
-;; (add-hook 'after-init-hook
-;;	  (lambda ()
-;;	    (progn
-;;	      (load-file "~/.my-emacs.d/init.el")
-;;	      (ignore (elpaca-process-queues))
-;;	    (message "Reload second"))))
+(setq org-element--cache-self-verify 'backtrace)
 #+end_src
 
 ** Load Evil Mode
@@ -515,7 +510,8 @@ Company is a text completion framework for Emacs. The name stands for “complet
   :diminish
   :init
   (setq company-minimum-prefix-length 1
-        company-tooltip-limit 16
+        company-tooltip-limit 20
+	company-show-numbers t
         company-tooltip-align-annotations t
         company-require-match 'never
         company-idle-delay 0.2
@@ -526,13 +522,17 @@ Company is a text completion framework for Emacs. The name stands for “complet
               help-mode
               gud-mode
               vterm-mode)
-        company-frontends
-        '(company-pseudo-tooltip-frontend  ; always show candidates in overlay tooltip
-          company-echo-metadata-frontend)  ; show selected candidate docs in echo area
+        company-frontends '(company-pseudo-tooltip-frontend  ; always show candidates in overlay tooltip
+			    company-echo-metadata-frontend)  ; show selected candidate docs in echo area
 
         ;; Buffer-local backends will be computed when loading a major mode, so
         ;; only specify a global default here.
-        company-backends '(company-capf)
+        company-backends '(company-capf
+			   company-files
+			   company-dabbrev-code
+			   company-dabbrev
+			   company-keywords
+			   )
 
         ;; These auto-complete the current selection when
         ;; `company-auto-commit-chars' is typed. This is too magical. We
@@ -564,6 +564,13 @@ Company is a text completion framework for Emacs. The name stands for “complet
   (company-tooltip-align-annotations 't)
   (global-company-mode t))
 
+;; Расширенный вариант с company-flx (для гибкого фуззи-поиска)
+(use-package company-flx
+  :ensure t
+  :after company
+  :config
+  (company-flx-mode +1))
+
 (use-package company-box
   :ensure t
   :after company
@@ -577,13 +584,9 @@ Company is a text completion framework for Emacs. The name stands for “complet
   :config
   (setq company-quickhelp-delay .2)
 )
-
 (with-eval-after-load 'company-files
   ;; Fix `company-files' completion for org file:* links
   (add-to-list 'company-files--regexps "file:\\(\\(?:\\.\\{1,2\\}/\\|~/\\|/\\)[^\]\n]*\\)"))
-
-
-
 #+end_src
 
 * DASHBOARD
@@ -784,17 +787,17 @@ Install luacheck from your Linux distro’s repositories for flycheck to work co
 Settings fonts.
 
 #+begin_src emacs-lisp
-
-  (setq font-size 140)
-  (add-hook 'after-init-hook
-  	  (lambda ()
+(defun my/setup-font ()
+(interactive)
+(when (display-graphic-p)
+ (setq font-size 140)
   (set-face-attribute 'default nil
   		    :font "JetBrains Mono"
   		    :height font-size
   		    :weight 'medium)
   (set-face-attribute 'variable-pitch nil
   		    :font "Noto Sans"
-  		    :height (+ font-size 1) 
+  		    :height (+ font-size 1)
   		    :weight 'medium)
   (set-face-attribute 'fixed-pitch nil
   		    :font "JetBrains Mono"
@@ -804,16 +807,18 @@ Settings fonts.
   		    :slant 'italic)
   (set-face-attribute 'font-lock-keyword-face nil
   		    :slant 'italic)
-
-  (add-to-list 'initial-frame-alist '(font . "JetBrains Mono-11"))
-  (add-to-list 'default-frame-alist '(font . "JetBrains Mono-11"))
+(let ((font-size "14"))
+  (add-to-list 'initial-frame-alist '(font . (concat "JetBrains Mono-" font-size)))
+  (add-to-list 'default-frame-alist '(font . (concat "JetBrains Mono-" font-size))))
 
   (setq-default line-spacing 0.12)
-  (when (display-graphic-p)
-    (redraw-display))
-(message "Font settings applied")
-(message "Current font: %s" (face-attribute 'default :font))
-))
+  ;;(redraw-display)
+  (message "Font settings applied")
+  (message "Current font: %s" (face-attribute 'default :font))
+  ))
+
+(add-hook 'after-init-hook 'my/setup-font)
+(add-hook 'emacs-startup-hook 'my/setup-font)
 
 #+end_src
 
@@ -1090,13 +1095,6 @@ Projectile is a project interaction library for Emacs.  It should be noted that 
 
 #+end_src
 
-* POLY-ORG
-Enabled autocomplete in org-mode src blocks
-#+begin_src emacs-lisp
-(use-package poly-org
-  :ensure t
-  :mode ("\\.org\\'" . poly-org-mode))
-#+end_src
 * POSFRAME
 #+begin_src emacs-lisp
 (use-package posframe
