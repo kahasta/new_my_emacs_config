@@ -8,7 +8,10 @@
 (require 'magit-mod)
 ))
 
-(setq org-element--cache-self-verify 'backtrace)
+(setq visible-bell t)
+;; Это дает скрол курсора не с самого низа или верха
+(setq scroll-conservatively 10 
+      scroll-margin 15)
 
 (setq evil-want-keybinding nil)
 (setq evil-want-integration t)
@@ -16,23 +19,23 @@
 (elpaca elpaca-use-package (elpaca-use-package-mode))
 
 ;; Установка evil с явным ожиданием загрузки
-  (use-package evil
-    :ensure t
-    :demand t  ; Загружать немедленно
-    :init
-    (setq evil-vsplit-window-right t)
-    (setq evil-split-window-below t)
-    (setq evil-want-C-u-scroll t)
-    (evil-mode))  ; Явное включение режима
+(use-package evil
+  :ensure t
+  :demand t  ; Загружать немедленно
+  :init
+  (setq evil-vsplit-window-right t)
+  (setq evil-split-window-below t)
+  (setq evil-want-C-u-scroll t)
+  (evil-mode))  ; Явное включение режима
 
 ;; Evil Collection должен загружаться ПОСЛЕ evil
-  (use-package evil-collection
-    :ensure t
-    :after evil
-    :demand t
-    :config
-    ;; (setq evil-collection-mode-list '(dashboard dired ibuffer eshell help-mode magit org))
-    (evil-collection-init))
+(use-package evil-collection
+  :ensure t
+  :after evil
+  :demand t
+  :config
+  ;; (setq evil-collection-mode-list '(dashboard dired ibuffer eshell org))
+  (evil-collection-init))
 
 (with-eval-after-load 'lsp-mode
   (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
@@ -173,7 +176,7 @@
   (kahasta/leader-keys
     "t" '(:ignore t :wk "Toggle")
     "t a" '(aggressive-indent-mode :wk "Aggressive-indent toggle")
-    "t e" '(eldoc-box-hover-mode :wk "Eldoc box hover toggle")
+    "t e" '(eldoc-box-hover-at-point-mode :wk "Eldoc box hover toggle")
     "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
     "t T" '(visual-line-mode :wk "Toggle truncated lines")
     "t t" '(load-theme :wk "Load theme"))
@@ -195,6 +198,7 @@
     "w j" '(evil-window-down :wk "Window down")
     "w k" '(evil-window-up :wk "Window up")
     "w l" '(evil-window-right :wk "Window right")
+    "w o" '(other-window :wk "Ace window")
     "w w" '(evil-window-next :wk "Goto next window")
     ;; Move Windows
     "w H" '(buf-move-left :wk "Buffer move left")
@@ -206,8 +210,10 @@
 (use-package ace-window
   :ensure t
   :init
-  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))  ; Буквы для выбора окон
-  (setq aw-scope 'frame)                       ; В рамках одного фрейма
+  (progn
+    (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))  ; Буквы для выбора окон
+    (setq aw-scope 'frame)                       ; В рамках одного фрейма
+    (global-set-key [remap other-window] 'ace-window))
   :config
   ;; Цвета для номеров окон
   (set-face-attribute 'aw-leading-char-face nil 
@@ -220,16 +226,13 @@
         aw-dispatch-always t)
   
   ;; Для работы с ivy/helm
-  (setq aw-dispatch-algorithm 'aw-dispatch-algo-ivy)
+  (setq aw-dispatch-algorithm 'aw-dispatch-algo-ivy))
 
   ;; Для отображения номеров окон
   (use-package window-numbering
     :ensure t
     :config
     (window-numbering-mode 1))
-  
-  ;; Привязки клавиш
-  (global-set-key (kbd "M-o") 'ace-window))
 
 (use-package aggressive-indent
   :ensure t)
@@ -243,19 +246,19 @@
   "Create and select a frame called emacs-run-launcher which consists only of a minibuffer and has specific dimensions. Runs app-launcher-run-app on that frame, which is an emacs command that prompts you to select an app and open it in a dmenu like behaviour. Delete the frame after that command has exited"
   (interactive)
   (with-selected-frame 
-    (make-frame '((name . "emacs-run-launcher")
-                  (minibuffer . only)
-                  (fullscreen . 0) ; no fullscreen
-                  (undecorated . t) ; remove title bar
-                  ;;(auto-raise . t) ; focus on this frame
-                  ;;(tool-bar-lines . 0)
-                  ;;(menu-bar-lines . 0)
-                  (internal-border-width . 10)
-                  (width . 80)
-                  (height . 11)))
-                  (unwind-protect
-                    (app-launcher-run-app)
-                    (delete-frame))))
+      (make-frame '((name . "emacs-run-launcher")
+                    (minibuffer . only)
+                    (fullscreen . 0) ; no fullscreen
+                    (undecorated . t) ; remove title bar
+                    ;;(auto-raise . t) ; focus on this frame
+                    ;;(tool-bar-lines . 0)
+                    ;;(menu-bar-lines . 0)
+                    (internal-border-width . 10)
+                    (width . 80)
+                    (height . 11)))
+    (unwind-protect
+        (app-launcher-run-app)
+      (delete-frame))))
 
 (use-package all-the-icons
   :ensure t
@@ -291,8 +294,8 @@
   "Swap the current buffer and the buffer above the split.
 If there is no split, ie now window above the current one, an
 error is signaled."
-;;  "Switches between the current buffer, and the buffer above the
-;;  split, if possible."
+  ;;  "Switches between the current buffer, and the buffer above the
+  ;;  split, if possible."
   (interactive)
   (let* ((other-win (windmove-find-other-window 'up))
 	 (buf-this-buf (window-buffer (selected-window))))
@@ -306,7 +309,7 @@ error is signaled."
 
 ;;;###autoload
 (defun buf-move-down ()
-"Swap the current buffer and the buffer under the split.
+  "Swap the current buffer and the buffer under the split.
 If there is no split, ie now window under the current one, an
 error is signaled."
   (interactive)
@@ -323,7 +326,7 @@ error is signaled."
 
 ;;;###autoload
 (defun buf-move-left ()
-"Swap the current buffer and the buffer on the left of the split.
+  "Swap the current buffer and the buffer on the left of the split.
 If there is no split, ie now window on the left of the current
 one, an error is signaled."
   (interactive)
@@ -339,7 +342,7 @@ one, an error is signaled."
 
 ;;;###autoload
 (defun buf-move-right ()
-"Swap the current buffer and the buffer on the right of the split.
+  "Swap the current buffer and the buffer on the right of the split.
 If there is no split, ie now window on the right of the current
 one, an error is signaled."
   (interactive)
@@ -425,7 +428,8 @@ one, an error is signaled."
     (eldoc-add-command 'company-complete-selection
                        'company-complete-common
                        'company-capf
-                       'company-abort))
+                       'company-abort)
+    )
   :custom
   (company-dabbrev-downcase nil) ; не понижать регистр при дополнении
   (company-selection-wrap-around t) ; циклическая навигация
@@ -456,7 +460,7 @@ one, an error is signaled."
   :init (company-quickhelp-mode)
   :config
   (setq company-quickhelp-delay .2)
-)
+  )
 (with-eval-after-load 'company-files
   ;; Fix `company-files' completion for org file:* links
   (add-to-list 'company-files--regexps "file:\\(\\(?:\\.\\{1,2\\}/\\|~/\\|/\\)[^\]\n]*\\)"))
@@ -481,13 +485,6 @@ one, an error is signaled."
                                     (bookmarks . "book")))
   :config
   (dashboard-setup-startup-hook))
-
-(use-package diff-hl
-  :ensure t
-  :init
-  (require 'diff-hl-flydiff)
-  :config
-  (diff-hl-flydiff-mode))
 
 (use-package dired-open
   :ensure t
@@ -520,7 +517,7 @@ one, an error is signaled."
   ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
   ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
   ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
-   (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
   )
 
 
@@ -534,7 +531,7 @@ one, an error is signaled."
 ;;   (setq dirvish-mode-line-format
 ;;         '(:left (sort file-time " " file-size symlink) 
 ;;         :right (omit yank index))
-  
+
 ;;   ;; Интеграция с peep-dired
 ;;   (add-hook 'dirvish-setup-hook
 ;;             (lambda ()
@@ -580,9 +577,9 @@ one, an error is signaled."
   ((python-mode js-mode rust-mode dart-mode) . eglot-ensure)
   
   :config
-(add-to-list 'eglot-server-programs
+  (add-to-list 'eglot-server-programs
                '(rust-mode . ("rust-analyzer")))
- ;; Оптимизации для Rust
+  ;; Оптимизации для Rust
   (setq eglot-ignored-server-capabilities
         '(:documentFormattingProvider))
   (setq eglot-autoshutdown t
@@ -596,12 +593,18 @@ one, an error is signaled."
          ([remap describe-symbol]   . helpful-symbol)
          ([remap describe-key]      . helpful-key)))
 
+
+
 ;; eldoc-box — всплывающая документация
 (use-package eldoc-box
   :ensure t
-  :hook ((prog-mode . eldoc-box-hover-mode)
-         (emacs-lisp-mode . eldoc-box-hover-mode))
+  :hook (
+	 ;; (prog-mode . eldoc-box-hover-mode)
+         (emacs-lisp-mode . eldoc-box-hover-mode)
+	 (prog-mode . eldoc-box-hover-at-point-mode)
+)
   :custom
+  (global-set-key (kbd "K") #'my/show-doc-posframe)
   (eldoc-box-clear-with-C-g t)         ;; закрывать по C-g
   (eldoc-box-max-pixel-width 600)
   (eldoc-box-only-multi-line t)        ;; показывать, только если есть что показать
@@ -611,6 +614,7 @@ one, an error is signaled."
   :ensure t
   :bind
   (("C-." . embark-act)
+   ;; ("K" .  eldoc-box-help-at-point)
    ("C-h B" . embark-bindings)))
 
 (use-package flycheck
@@ -629,8 +633,10 @@ one, an error is signaled."
   "Настройка шрифтов" 
   (interactive)
   (let ((font-size 15)  ; Размер по умолчанию
-        (main-font "JetBrains Mono")
-        (var-font "Noto Serif")
+         (main-font "JetBrains Mono")
+        ;;(main-font "Iosevka")
+         (var-font "Noto Serif")
+        ;;(var-font "Iosevka Aile")
 	        (line-spacing-size 0.12))
     
     ;; Проверка графического режима
@@ -884,25 +890,53 @@ one, an error is signaled."
 (defun my/show-doc-posframe ()
   "Показать документацию во всплывающем окне posframe."
   (interactive)
-  (let* ((sym (symbol-at-point))
-         (doc (or (and sym (documentation sym)) "Нет документации.")))
+  (let* ((doc (or (and (fboundp 'eldoc--doc-buffer)
+                       (buffer-live-p (eldoc--doc-buffer))
+                       (with-current-buffer (eldoc--doc-buffer)
+                         (buffer-string)))
+                  (let ((sym (symbol-at-point)))
+                    (and sym (documentation sym)))
+                  "Нет документации.")))
     (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
       (let ((inhibit-read-only t))
-      (erase-buffer)
-      (insert doc)
-      (goto-char (point-min))
-      (read-only-mode 1))
+        (erase-buffer)
+        (insert doc)
+        (goto-char (point-min))
+        (read-only-mode 1))
       (use-local-map (let ((map (make-sparse-keymap)))
                        (define-key map (kbd "C-g") #'my/hide-doc-posframe)
                        map)))
     (posframe-show my/doc-posframe-buffer
-                   :string nil ;; nil — использовать содержимое буфера
+                   :string nil
                    :position (point)
                    :internal-border-width 10
                    :border-width 1
                    :background-color (face-background 'tooltip nil t)
-                   :accept-focus nil ;; без фокуса — иначе posframe зависнет
+                   :accept-focus nil
                    :timeout nil)))
+
+;; (defun my/show-doc-posframe ()
+;;   "Показать документацию во всплывающем окне posframe."
+;;   (interactive)
+;;   (let* ((sym (symbol-at-point))
+;;          (doc (or (and sym (documentation sym)) "Нет документации.")))
+;;     (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
+;;       (let ((inhibit-read-only t))
+;;       (erase-buffer)
+;;       (insert doc)
+;;       (goto-char (point-min))
+;;       (read-only-mode 1))
+;;       (use-local-map (let ((map (make-sparse-keymap)))
+;;                        (define-key map (kbd "C-g") #'my/hide-doc-posframe)
+;;                        map)))
+;;     (posframe-show my/doc-posframe-buffer
+;;                    :string nil ;; nil — использовать содержимое буфера
+;;                    :position (point)
+;;                    :internal-border-width 10
+;;                    :border-width 1
+;;                    :background-color (face-background 'tooltip nil t)
+;;                    :accept-focus nil ;; без фокуса — иначе posframe зависнет
+;;                    :timeout nil)))
 
 ;; Привязка в evil-normal-state
 (define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
@@ -974,6 +1008,11 @@ one, an error is signaled."
   ;; Позволяет удалять парные символы сразу
   (sp-local-pair 'emacs-lisp-mode "'" nil :actions nil)
   (sp-local-pair 'web-mode "<" ">"))
+
+(use-package smooth-scroll
+  :ensure t
+  :config
+  (smooth-scroll-mode 1))
 
 (use-package doom-themes
   :ensure t

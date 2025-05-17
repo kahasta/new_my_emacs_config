@@ -64,7 +64,10 @@
  '(package-selected-packages
    '(ace-window dash diff-hl emojify evil expand-region flycheck forge
 		magit marginalia posframe projectile rust-mode toc-org
-		treemacs xclip)))
+		treemacs ultra-scroll xclip))
+ '(package-vc-selected-packages
+   '((ultra-scroll :url "https://github.com/jdtsmith/ultra-scroll")))
+ '(safe-local-variable-values '((eval setq elisp-flymake-byte-compile t))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
