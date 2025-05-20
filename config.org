@@ -58,7 +58,7 @@
   - [[#vterm-toggle][Vterm-Toggle]]
 - [[#smartparens][SMARTPARENS]]
 - [[#smooth-scroll][SMOOTH-SCROLL]]
-- [[#tabs-mode][TABS-MODE]]
+- [[#tabs-mode-native][TABS-MODE-NATIVE]]
 - [[#theme][THEME]]
 - [[#tramp][TRAMP]]
 - [[#tree-sitter][TREE-SITTER]]
@@ -85,7 +85,7 @@
 	    (require 'treemacs-mod)
 	    (require 'magit-mod)
 	    ;; (require 'awesome-tab-mod)
-	    ;; (require 'centaur-tabs-mod)
+	    (require 'centaur-tabs-mod)
 	    ))
 #+end_src
 
@@ -1134,16 +1134,17 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
   (smooth-scroll-mode 1))
 #+end_src
 
-* TABS-MODE
+* TABS-MODE-NATIVE
 #+begin_src emacs-lisp
 ;; Включение режима вкладок
-(tab-bar-mode 1)
+;; (tab-bar-mode 1)
 
 ;; Открытие нового файла в новой вкладке
-(advice-add 'find-file :around
-            (lambda (orig-fun &rest args)
-              (tab-bar-new-tab)
-              (apply orig-fun args)))
+;; (advice-add 'find-file :around
+;;             (lambda (orig-fun &rest args)
+;;               (tab-bar-new-tab)
+;;               (apply orig-fun args)))
+
 #+end_src
 * THEME
 #+begin_src emacs-lisp

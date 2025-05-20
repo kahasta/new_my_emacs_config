@@ -12,7 +12,7 @@
 	    (require 'treemacs-mod)
 	    (require 'magit-mod)
 	    ;; (require 'awesome-tab-mod)
-	    ;; (require 'centaur-tabs-mod)
+	    (require 'centaur-tabs-mod)
 	    ))
 
 (setq visible-bell t)
@@ -854,19 +854,19 @@ one, an error is signaled."
   (smooth-scroll-mode 1))
 
 ;; Включение режима вкладок
-(tab-bar-mode 1)
+;; (tab-bar-mode 1)
 
 ;; Открытие нового файла в новой вкладке
-(advice-add 'find-file :around
-            (lambda (orig-fun &rest args)
-              (tab-bar-new-tab)
-              (apply orig-fun args)))
+;; (advice-add 'find-file :around
+;;             (lambda (orig-fun &rest args)
+;;               (tab-bar-new-tab)
+;;               (apply orig-fun args)))
 
 (use-package doom-themes
       :ensure t
       :config
       ;; Global settings (defaults)
-      (load-theme 'doom-molokai t)
+      (load-theme 'doom-monokai-machine t)
 
       ;; Enable flashing mode-line on errors
       (doom-themes-visual-bell-config)
