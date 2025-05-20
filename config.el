@@ -5,12 +5,14 @@
 	  (lambda ()
 	    ;;; ----------> add to this your modules
 
-	 ;;   (require 'company-mod)
+	    ;;   (require 'company-mod)
 	    (require 'corfu-ord-cape)
 	    (require 'ivy-counsel-mod)
 	    (require 'vertico-mod)
 	    (require 'treemacs-mod)
 	    (require 'magit-mod)
+	    ;; (require 'awesome-tab-mod)
+	    ;; (require 'centaur-tabs-mod)
 	    ))
 
 (setq visible-bell t)
@@ -52,11 +54,19 @@
   (load user-init-file nil 'nomessage)
   (message "Init file reloaded!"))
 
-(defun my/sudo-edit ()
- "Edit file as root with explicit bash shell"
- (interactive)
- (let ((file (or buffer-file-name (error "Not visiting a file"))))
-   (find-file (format "/sudo::%s" file))))
+;; (defun my/sudo-edit ()
+;;  "Edit file as root with explicit bash shell"
+;;  (interactive)
+;;  (let ((file (or buffer-file-name (error "Not visiting a file"))))
+;;    (find-file (format "/sudo::%s" file))))
+
+(defun my/sudo-edit (&optional arg)
+  "Редактировать текущий файл или ARG с правами sudo через TRAMP."
+  (interactive "P")
+  (find-file
+   (if arg
+       (read-file-name "Sudo file: ")
+       (concat "/sudo::" (buffer-file-name)))))
 
 (use-package general
   :ensure t
@@ -347,14 +357,6 @@ one, an error is signaled."
       (set-window-buffer other-win buf-this-buf)
       (select-window other-win))))
 
-(use-package centaur-tabs
-  :ensure t
-  :demand
-  :config
-  (centaur-tabs-mode t)
-  :bind
-  ("C-<tab>" . centaur-tabs-forward))
-
 (use-package yaml-mode 
   :ensure t
   :defer t)
@@ -517,11 +519,11 @@ one, an error is signaled."
   :diminish
   :init (global-flycheck-mode))
 
-(use-package flymake
-  :ensure t
-  :config
-  (setq elisp-flymake-byte-compile-load-path load-path)
-  :hook ((emacs-lisp-mode . flymake-mode)))
+;; (use-package flymake
+;;   :ensure t
+;;   :config
+;;   (setq elisp-flymake-byte-compile-load-path nil)
+;;   :hook ((emacs-lisp-mode . flymake-mode)))
 
 (defun my/setup-my-fonts ()
   "Настройка шрифтов" 
@@ -851,32 +853,75 @@ one, an error is signaled."
   :config
   (smooth-scroll-mode 1))
 
+;; Включение режима вкладок
+(tab-bar-mode 1)
+
+;; Открытие нового файла в новой вкладке
+(advice-add 'find-file :around
+            (lambda (orig-fun &rest args)
+              (tab-bar-new-tab)
+              (apply orig-fun args)))
+
 (use-package doom-themes
-  :ensure t
-  :config
-  ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-gruvbox t)
+      :ensure t
+      :config
+      ;; Global settings (defaults)
+      (load-theme 'doom-molokai t)
 
-  ;; Enable flashing mode-line on errors
-  (doom-themes-visual-bell-config)
-  ;; Enable custom neotree theme (nerd-icons must be installed!)
-  (doom-themes-neotree-config)
-  ;; or for treemacs users
-  (setq doom-themes-treemacs-theme "doom-one") ; use "doom-colors" for less minimal icon theme
-  (doom-themes-treemacs-config)
-  ;; Corrects (and improves) org-mode's native fontification.
-  (doom-themes-org-config))
+      ;; Enable flashing mode-line on errors
+      (doom-themes-visual-bell-config)
+      ;; Enable custom neotree theme (nerd-icons must be installed!)
+      (doom-themes-neotree-config)
+      ;; or for treemacs users
+      (setq doom-themes-treemacs-theme "doom-one") ; use "doom-colors" for less minimal icon theme
+      (doom-themes-treemacs-config)
+      ;; Corrects (and improves) org-mode's native fontification.
+      (doom-themes-org-config)
+      :custom
+      (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+            doom-themes-enable-italic t) ; if nil, italics is universally disabled
+)
 
-  (use-package doom-modeline
-    :ensure t
-    :init (doom-modeline-mode 1)
+      (use-package doom-modeline
+        :ensure t
+        :init (doom-modeline-mode 1)
 	:config
 	(setq doom-modeline-height 30
 	      doom-modeline-bar-width 5
 	      doom-modeline-persp-name t
 	      doom-modeline-persp-icon t))
+
+;; (use-package tramp
+;;   :ensure t
+;;   :config
+;;   (setq tramp-default-method "sudo")
+;;   (setq tramp-shell-prompt-pattern "^[^$>\n]*[#$%>] *")
+;;   (setq tramp-use-ssh-controlmaster-options nil)
+;;   (setq tramp-verbose 1)
+;;   (add-to-list 'tramp-connection-properties
+;;                (list (regexp-quote ".*") "shell" "/bin/bash"))
+;;   (setq password-cache-expiry nil)
+;;   (add-to-list 'tramp-methods
+;;                '("sudo"
+;;                  (tramp-login-program "sudo")
+;;                  (tramp-login-args (("-u" "%u") ("-i")))
+;;                  (tramp-remote-shell "/bin/bash")
+;;                  (tramp-remote-shell-args ("-c"))))
+;;   )
+;; (setq tramp-shell-file-name "/bin/bash")
+;; (setq shell-file-name "/bin/bash")
+;; (setq explicit-shell-file-name "/bin/bash")
+;; (setq eshell-shell-file-name "/bin/bash")
+;; ;; Настройки для nushell в TRAMP
+;; (with-eval-after-load 'tramp
+;;   (add-to-list 'tramp-remote-path "/bin")
+;;   (add-to-list 'tramp-remote-path "/usr/bin")
+;;   (add-to-list 'tramp-remote-path "/sbin")
+;;   (setq tramp-remote-process-environment
+;;         (append tramp-remote-process-environment
+;;                '("SHELL=/bin/bash"  ;; Форсируем bash для TRAMP
+;;                  "TERM=dumb"
+;;                  "INSIDE_EMACS=tramp"))))
 
 ;; (use-package tree-sitter
 ;;   :ensure t

@@ -20,7 +20,6 @@
 - [[#avy][AVY]]
 - [[#backup--trash-files][BACKUP & TRASH FILES]]
 - [[#buffermove][BUFFERMOVE]]
-- [[#centaur-tabs][CENTAUR-TABS]]
 - [[#configuration-for-files][CONFIGURATION FOR FILES]]
 - [[#dashboard][DASHBOARD]]
 - [[#dired][DIRED]]
@@ -59,7 +58,9 @@
   - [[#vterm-toggle][Vterm-Toggle]]
 - [[#smartparens][SMARTPARENS]]
 - [[#smooth-scroll][SMOOTH-SCROLL]]
+- [[#tabs-mode][TABS-MODE]]
 - [[#theme][THEME]]
+- [[#tramp][TRAMP]]
 - [[#tree-sitter][TREE-SITTER]]
 - [[#yasnippet][YASNIPPET]]
 - [[#vundo][VUNDO]]
@@ -77,12 +78,14 @@
 	  (lambda ()
 	    ;;; ----------> add to this your modules
 
-	 ;;   (require 'company-mod)
+	    ;;   (require 'company-mod)
 	    (require 'corfu-ord-cape)
 	    (require 'ivy-counsel-mod)
 	    (require 'vertico-mod)
 	    (require 'treemacs-mod)
 	    (require 'magit-mod)
+	    ;; (require 'awesome-tab-mod)
+	    ;; (require 'centaur-tabs-mod)
 	    ))
 #+end_src
 
@@ -139,11 +142,21 @@
 
 *** My Sudo edit
 #+begin_src emacs-lisp
- (defun my/sudo-edit ()
-  "Edit file as root with explicit bash shell"
-  (interactive)
-  (let ((file (or buffer-file-name (error "Not visiting a file"))))
-    (find-file (format "/sudo::%s" file))))
+
+;; (defun my/sudo-edit ()
+;;  "Edit file as root with explicit bash shell"
+;;  (interactive)
+;;  (let ((file (or buffer-file-name (error "Not visiting a file"))))
+;;    (find-file (format "/sudo::%s" file))))
+
+(defun my/sudo-edit (&optional arg)
+  "Редактировать текущий файл или ARG с правами sudo через TRAMP."
+  (interactive "P")
+  (find-file
+   (if arg
+       (read-file-name "Sudo file: ")
+       (concat "/sudo::" (buffer-file-name)))))
+
 #+end_src
 
 ** General Keybindings
@@ -465,16 +478,6 @@ one, an error is signaled."
       (select-window other-win))))
 #+end_src
 
-* CENTAUR-TABS
-#+begin_src emacs-lisp
-(use-package centaur-tabs
-  :ensure t
-  :demand
-  :config
-  (centaur-tabs-mode t)
-  :bind
-  ("C-<tab>" . centaur-tabs-forward))
-#+end_src
 
 * CONFIGURATION FOR FILES
 #+begin_src emacs-lisp
@@ -673,11 +676,13 @@ Install luacheck from your Linux distro’s repositories for flycheck to work co
 
 * FLYMAKE
 #+begin_src emacs-lisp
-(use-package flymake
-  :ensure t
-  :config
-  (setq elisp-flymake-byte-compile-load-path load-path)
-  :hook ((emacs-lisp-mode . flymake-mode)))
+
+;; (use-package flymake
+;;   :ensure t
+;;   :config
+;;   (setq elisp-flymake-byte-compile-load-path nil)
+;;   :hook ((emacs-lisp-mode . flymake-mode)))
+
 #+end_src
 
 * FONTS
@@ -1129,15 +1134,24 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
   (smooth-scroll-mode 1))
 #+end_src
 
+* TABS-MODE
+#+begin_src emacs-lisp
+;; Включение режима вкладок
+(tab-bar-mode 1)
+
+;; Открытие нового файла в новой вкладке
+(advice-add 'find-file :around
+            (lambda (orig-fun &rest args)
+              (tab-bar-new-tab)
+              (apply orig-fun args)))
+#+end_src
 * THEME
 #+begin_src emacs-lisp
     (use-package doom-themes
       :ensure t
       :config
       ;; Global settings (defaults)
-      (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-            doom-themes-enable-italic t) ; if nil, italics is universally disabled
-      (load-theme 'doom-gruvbox t)
+      (load-theme 'doom-monokai-machine t)
 
       ;; Enable flashing mode-line on errors
       (doom-themes-visual-bell-config)
@@ -1147,7 +1161,11 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
       (setq doom-themes-treemacs-theme "doom-one") ; use "doom-colors" for less minimal icon theme
       (doom-themes-treemacs-config)
       ;; Corrects (and improves) org-mode's native fontification.
-      (doom-themes-org-config))
+      (doom-themes-org-config)
+      :custom
+      (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+            doom-themes-enable-italic t) ; if nil, italics is universally disabled
+)
 
       (use-package doom-modeline
         :ensure t
@@ -1161,6 +1179,43 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
 
 #+end_src
 
+* TRAMP
+#+begin_src emacs-lisp
+
+;; (use-package tramp
+;;   :ensure t
+;;   :config
+;;   (setq tramp-default-method "sudo")
+;;   (setq tramp-shell-prompt-pattern "^[^$>\n]*[#$%>] *")
+;;   (setq tramp-use-ssh-controlmaster-options nil)
+;;   (setq tramp-verbose 1)
+;;   (add-to-list 'tramp-connection-properties
+;;                (list (regexp-quote ".*") "shell" "/bin/bash"))
+;;   (setq password-cache-expiry nil)
+;;   (add-to-list 'tramp-methods
+;;                '("sudo"
+;;                  (tramp-login-program "sudo")
+;;                  (tramp-login-args (("-u" "%u") ("-i")))
+;;                  (tramp-remote-shell "/bin/bash")
+;;                  (tramp-remote-shell-args ("-c"))))
+;;   )
+;; (setq tramp-shell-file-name "/bin/bash")
+;; (setq shell-file-name "/bin/bash")
+;; (setq explicit-shell-file-name "/bin/bash")
+;; (setq eshell-shell-file-name "/bin/bash")
+;; ;; Настройки для nushell в TRAMP
+;; (with-eval-after-load 'tramp
+;;   (add-to-list 'tramp-remote-path "/bin")
+;;   (add-to-list 'tramp-remote-path "/usr/bin")
+;;   (add-to-list 'tramp-remote-path "/sbin")
+;;   (setq tramp-remote-process-environment
+;;         (append tramp-remote-process-environment
+;;                '("SHELL=/bin/bash"  ;; Форсируем bash для TRAMP
+;;                  "TERM=dumb"
+;;                  "INSIDE_EMACS=tramp"))))
+  
+
+#+end_src
 * TREE-SITTER
 #+begin_src emacs-lisp
 
