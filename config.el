@@ -6,6 +6,7 @@
 	    ;;; ----------> add to this your modules
 
 	    ;;   (require 'company-mod)
+	    (require 'eglot-mod)
 	    (require 'corfu-ord-cape)
 	    (require 'ivy-counsel-mod)
 	    (require 'vertico-mod)
@@ -466,20 +467,6 @@ one, an error is signaled."
   :config
   (setq shut-up-ignore '*)
   (message "Output silencing package (shut-up) initialized"))
-
-(use-package eglot
-  :ensure nil  ; Встроен в Emacs 29+
-  :hook
-  ((python-mode js-mode rust-mode dart-mode) . eglot-ensure)
-  
-  :config
-  (add-to-list 'eglot-server-programs
-               '(rust-mode . ("rust-analyzer")))
-  ;; Оптимизации для Rust
-  (setq eglot-ignored-server-capabilities
-        '(:documentFormattingProvider))
-  (setq eglot-autoshutdown t
-        eglot-send-changes-idle-time 0.5))
 
 ;; helpful — улучшенные describe-функции
 (use-package helpful

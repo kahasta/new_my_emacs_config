@@ -26,7 +26,6 @@
 - [[#diminish][DIMINISH]]
 - [[#expand-region][EXPAND-REGION]]
 - [[#extension-emacs-utils][EXTENSION EMACS UTILS]]
-- [[#eglot][EGLOT]]
 - [[#eldoc-box-helpful-embark][ELDOC-BOX HELPFUL EMBARK]]
 - [[#flycheck][FLYCHECK]]
 - [[#flymake][FLYMAKE]]
@@ -79,6 +78,7 @@
 	    ;;; ----------> add to this your modules
 
 	    ;;   (require 'company-mod)
+	    (require 'eglot-mod)
 	    (require 'corfu-ord-cape)
 	    (require 'ivy-counsel-mod)
 	    (require 'vertico-mod)
@@ -610,24 +610,6 @@ This package implements hiding or abbreviation of the modeline displays (lighter
   :config
   (setq shut-up-ignore '*)
   (message "Output silencing package (shut-up) initialized"))
-#+end_src
-* EGLOT
-#+begin_src emacs-lisp
-(use-package eglot
-  :ensure nil  ; Встроен в Emacs 29+
-  :hook
-  ((python-mode js-mode rust-mode dart-mode) . eglot-ensure)
-  
-  :config
-  (add-to-list 'eglot-server-programs
-               '(rust-mode . ("rust-analyzer")))
-  ;; Оптимизации для Rust
-  (setq eglot-ignored-server-capabilities
-        '(:documentFormattingProvider))
-  (setq eglot-autoshutdown t
-        eglot-send-changes-idle-time 0.5))
-
-
 #+end_src
 
 * ELDOC-BOX HELPFUL EMBARK
