@@ -60,6 +60,7 @@
 - [[#smartparens][SMARTPARENS]]
 - [[#smooth-scroll][SMOOTH-SCROLL]]
 - [[#tabs-mode-native][TABS-MODE-NATIVE]]
+- [[#telega][TELEGA]]
 - [[#theme][THEME]]
 - [[#tramp][TRAMP]]
 - [[#tree-sitter][TREE-SITTER]]
@@ -1164,6 +1165,15 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
 ;;               (tab-bar-new-tab)
 ;;               (apply orig-fun args)))
 
+#+end_src
+* TELEGA
+#+begin_src emacs-lisp
+(use-package telega
+  :ensure t
+  :commands (telega)
+  :defer t)
+(with-eval-after-load 'telega
+  (define-key global-map (kbd "C-c t") telega-prefix-map))
 #+end_src
 * THEME
 #+begin_src emacs-lisp

@@ -876,6 +876,13 @@ _l_ →                          _K_ увеличить высоту
 ;;               (tab-bar-new-tab)
 ;;               (apply orig-fun args)))
 
+(use-package telega
+  :ensure t
+  :commands (telega)
+  :defer t)
+(with-eval-after-load 'telega
+  (define-key global-map (kbd "C-c t") telega-prefix-map))
+
 (use-package doom-themes
       :ensure t
       :config

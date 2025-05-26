@@ -10,39 +10,40 @@
 (defun my/load-org-config ()
   "Безопасная загрузка конфигурации из Org-файла"
   (interactive)
-  (let ((org-file (expand-file-name "~/.my-emacs.d/config.org"))
-        (el-file (expand-file-name "~/.my-emacs.d/config.el")))
+  (cl-block my/load-org-config
+    (let ((org-file (expand-file-name (concat my/config-dir "config.org")))
+          (el-file (expand-file-name (concat my/config-dir "config.el"))))
 
-    ;; Проверяем существование исходного файла
-    (unless (file-exists-p org-file)
-      (message "Org config file not found: %s" org-file)
-      (cl-return-from my/load-org-config))
+      ;; Проверяем существование исходного файла
+      (unless (file-exists-p org-file)
+	(message "Org config file not found: %s" org-file)
+	(cl-return-from my/load-org-config))
 
-    ;; Танглим только если нужно
-    (when (or (not (file-exists-p el-file))
-              (file-newer-than-file-p org-file el-file))
-      (condition-case err
-          (progn
-            (message "Tangling org file...")
-            (org-babel-tangle-file org-file el-file)
-            (message "Successfully tangled: %s" el-file))
-        (error
-         (message "Failed to tangle org file: %s" err)
-         (when (file-exists-p el-file)
-           (delete-file el-file))
-         (cl-return-from my/load-org-config))))
-
-    ;; Проверяем и загружаем сгенерированный файл
-    (if (and (file-exists-p el-file)
-             (> (file-attribute-size (file-attributes el-file)) 0))
-        (condition-case err
+      ;; Танглим только если нужно
+      (when (or (not (file-exists-p el-file))
+		(file-newer-than-file-p org-file el-file))
+	(condition-case err
             (progn
-              (load-file el-file)
-              (message "Successfully loaded: %s" el-file))
+              (message "Tangling org file...")
+              (org-babel-tangle-file org-file el-file)
+              (message "Successfully tangled: %s" el-file))
           (error
-           (message "Error loading %s: %s" el-file err)
-           (delete-file el-file)))
-      (message "Empty or missing elisp file: %s" el-file))))
+           (message "Failed to tangle org file: %s" err)
+           (when (file-exists-p el-file)
+             (delete-file el-file))
+           (cl-return-from my/load-org-config))))
+
+      ;; Проверяем и загружаем сгенерированный файл
+      (if (and (file-exists-p el-file)
+               (> (file-attribute-size (file-attributes el-file)) 0))
+          (condition-case err
+              (progn
+		(load-file el-file)
+		(message "Successfully loaded: %s" el-file))
+            (error
+             (message "Error loading %s: %s" el-file err)
+             (delete-file el-file)))
+	(message "Empty or missing elisp file: %s" el-file)))))
 
 
 ;; Process performance tuning
