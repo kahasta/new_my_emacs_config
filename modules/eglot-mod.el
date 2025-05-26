@@ -4,11 +4,13 @@
     :init
     (setq eglot-sync-connect 1
           eglot-autoshutdown t
+	  eglot-connect-timeout 30
+	  eglot-eldoc-enable-hover nil
           ;; NOTE: We disable eglot-auto-display-help-buffer because :select t in
           ;;   its popup rule causes eglot to steal focus too often.
           eglot-auto-display-help-buffer nil)
     :hook
-    ((python-mode js-mode rust-mode dart-mode) . eglot-ensure)
+    ((python-mode js-mode rust-mode dart-mode ) . eglot-ensure)
 
     :config
     (add-to-list 'display-buffer-alist
@@ -24,9 +26,10 @@
 
       ;; Если у тебя есть функция `+eglot-lookup-documentation`, нужно её явно определить.
       ;; В противном случае можно использовать встроенную:
-      (define-key eglot-mode-map (kbd "M-d") #'eldoc))
+      (define-key eglot-mode-map (kbd "M-d") 'eldoc))
     (add-to-list 'eglot-server-programs
-		 '(rust-mode . ("rust-analyzer")))
+		 '(rust-mode . ("rust-analyzer"))
+		 '(dart-mode . ("dart" "`langauge-server" "--client-id=emacs.eglot")))
     ;; Оптимизации для Rust
     (setq eglot-ignored-server-capabilities
           '(:documentFormattingProvider))

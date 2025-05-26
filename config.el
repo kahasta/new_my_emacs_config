@@ -20,6 +20,9 @@
 ;; Это дает скрол курсора не с самого низа или верха
 (setq scroll-conservatively 10 
       scroll-margin 15)
+(winner-mode)
+(setq url-gateway-method 'socks)
+(setq socks-server '("Default server" "127.0.0.1" 8085 5))
 
 (setq evil-want-keybinding nil)
 (setq evil-want-integration t)
@@ -48,6 +51,11 @@
 (with-eval-after-load 'lsp-mode
   (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
 
+(defun my/toggle-comment ()
+  (interactive)
+  (if (region-active-p)
+      (comment-or-uncomment-region (region-beginning) (region-end))
+    (comment-or-uncomment-region (line-beginning-position) (line-end-position))))
 (defun my/reload-config ()
   "Reload Emacs configuration safely."
   (interactive)
@@ -85,7 +93,8 @@
     "." '(find-file :wk "Find file")
     "f c" '((lambda () (interactive) (find-file (concat my/config-dir "config.org"))) :wk "Edit emacs config")
     "f r" '(counsel-recentf :wk "Find recent files")
-    "TAB TAB" '(comment-line :wk "Comment lines"))
+    "TAB TAB" '(my/toggle-comment :wk "Comment lines") 
+    )
 
   (kahasta/leader-keys
     "b" '(:ignore t :wk "buffer") ;; :ignore t это чтоб игнорировать действие для дальнейших клавиш
@@ -189,6 +198,12 @@
     )
 
   (kahasta/leader-keys
+    "q" '(:ignore t :wk "My Hydra")
+    "q z" '(my/hydra-zoom/body :wk "Zoom")
+    "q w" '(my/hydra-window/body :wk "Windows")
+    )
+
+  (kahasta/leader-keys
     "w" '(:ignore t :wk "Windows")
     ;; Window splits
     "w c" '(evil-window-delete :wk "Close window")
@@ -202,12 +217,7 @@
     "w l" '(evil-window-right :wk "Window right")
     "w o" '(other-window :wk "Ace window")
     "w w" '(evil-window-next :wk "Goto next window")
-    ;; Move Windows
-    "w H" '(buf-move-left :wk "Buffer move left")
-    "w J" '(buf-move-down :wk "Buffer move down")
-    "w K" '(buf-move-up :wk "Buffer move up")
-    "w L" '(buf-move-right :wk "Buffer move right"))
-  )
+    ))
 
 (use-package ace-window
   :ensure t
@@ -237,7 +247,9 @@
     (window-numbering-mode 1))
 
 (use-package aggressive-indent
-  :ensure t)
+  :ensure t
+  :init
+  (global-aggressive-indent-mode 1))
 
 (use-package app-launcher
   :ensure '(app-launcher :host github :repo "SebastienWae/app-launcher"))
@@ -289,75 +301,6 @@
 
 (setq backup-directory-alist `(("." . ,(expand-file-name "backups/" user-emacs-directory))))
 
-(require 'windmove)
-
-;;;###autoload
-(defun buf-move-up ()
-  "Swap the current buffer and the buffer above the split.
-If there is no split, ie now window above the current one, an
-error is signaled."
-  ;;  "Switches between the current buffer, and the buffer above the
-  ;;  split, if possible."
-  (interactive)
-  (let* ((other-win (windmove-find-other-window 'up))
-	 (buf-this-buf (window-buffer (selected-window))))
-    (if (null other-win)
-        (error "No window above this one")
-      ;; swap top with this one
-      (set-window-buffer (selected-window) (window-buffer other-win))
-      ;; move this one to top
-      (set-window-buffer other-win buf-this-buf)
-      (select-window other-win))))
-
-;;;###autoload
-(defun buf-move-down ()
-  "Swap the current buffer and the buffer under the split.
-If there is no split, ie now window under the current one, an
-error is signaled."
-  (interactive)
-  (let* ((other-win (windmove-find-other-window 'down))
-	 (buf-this-buf (window-buffer (selected-window))))
-    (if (or (null other-win) 
-            (string-match "^ \\*Minibuf" (buffer-name (window-buffer other-win))))
-        (error "No window under this one")
-      ;; swap top with this one
-      (set-window-buffer (selected-window) (window-buffer other-win))
-      ;; move this one to top
-      (set-window-buffer other-win buf-this-buf)
-      (select-window other-win))))
-
-;;;###autoload
-(defun buf-move-left ()
-  "Swap the current buffer and the buffer on the left of the split.
-If there is no split, ie now window on the left of the current
-one, an error is signaled."
-  (interactive)
-  (let* ((other-win (windmove-find-other-window 'left))
-	 (buf-this-buf (window-buffer (selected-window))))
-    (if (null other-win)
-        (error "No left split")
-      ;; swap top with this one
-      (set-window-buffer (selected-window) (window-buffer other-win))
-      ;; move this one to top
-      (set-window-buffer other-win buf-this-buf)
-      (select-window other-win))))
-
-;;;###autoload
-(defun buf-move-right ()
-  "Swap the current buffer and the buffer on the right of the split.
-If there is no split, ie now window on the right of the current
-one, an error is signaled."
-  (interactive)
-  (let* ((other-win (windmove-find-other-window 'right))
-	 (buf-this-buf (window-buffer (selected-window))))
-    (if (null other-win)
-        (error "No right split")
-      ;; swap top with this one
-      (set-window-buffer (selected-window) (window-buffer other-win))
-      ;; move this one to top
-      (set-window-buffer other-win buf-this-buf)
-      (select-window other-win))))
-
 (use-package yaml-mode 
   :ensure t
   :defer t)
@@ -372,6 +315,16 @@ one, an error is signaled."
 (use-package terraform-mode 
   :ensure t
   :defer t)
+
+;; (global-completion-preview-mode)
+;; (push 'org-self-insert-command completion-preview-commands)
+;; (setf completion-styles '(basic flex)
+;;       completion-auto-select t
+;;       completion-auto-help 'visible
+;;       completions-format 'one-column
+;;       completions-sort 'historical
+;;       completions-max-height 20
+;;       completion-ignore-case t)
 
 (use-package dashboard
   :ensure t 
@@ -436,6 +389,20 @@ one, an error is signaled."
 
 (use-package diminish :ensure t)
 
+(use-package elfeed-tube
+  :ensure t
+  :after elfeed
+  :demand t
+  :config
+  (elfeed-tube-setup)
+  :bind (("C-x y" . elfeed)))
+
+(use-package elfeed-tube-mpv
+  :ensure t ;; or :straight t
+  :bind (:map elfeed-show-mode-map
+              ("C-c C-f" . elfeed-tube-mpv-follow-mode)
+              ("C-c C-w" . elfeed-tube-mpv-where)))
+
 (use-package expand-region
   :ensure t
   :bind 
@@ -477,21 +444,45 @@ one, an error is signaled."
          ([remap describe-key]      . helpful-key)))
 
 
-
+(defun my-eldoc-manual ()
+  (interactive)
+  (eldoc-print-current-symbol-info))
+(global-set-key (kbd "C-S-k") 'eldoc-print-current-symbol-info)
 ;; eldoc-box — всплывающая документация
 (use-package eldoc-box
   :ensure t
-  ;; :hook (
-   	 ;; (prog-mode . eldoc-box-hover-mode)
-   ;;       (emacs-lisp-mode . eldoc-box-hover-mode)
-   ;;	 (prog-mode . eldoc-box-hover-at-point-mode)
-   	;; )
+   ;;:hook (
+  ;; (prog-mode . eldoc-box-hover-mode)
+   ;;      (emacs-lisp-mode . eldoc-box-hover-mode)
+  	;; (prog-mode . eldoc-box-hover-at-point-mode)
+   ;;)
   :custom
-  (global-set-key (kbd "K") #'my/show-doc-posframe)
+  (eldoc-idle-delay 1000000)
+  ;;(global-set-key (kbd "K") #'my/show-doc-posframe)
   (eldoc-box-clear-with-C-g t)         ;; закрывать по C-g
   (eldoc-box-max-pixel-width 600)
   (eldoc-box-only-multi-line t)        ;; показывать, только если есть что показать
   (eldoc-echo-area-use-multiline-p nil)) ;; отключить echo-area
+
+
+(defun my/eglot-doc-buffer ()
+  "Показать документацию от Eglot в отдельном буфере, не обновляя автоматически."
+  (interactive)
+  (let ((eldoc-documentation-functions '(eglot--eldoc-function)))
+    (eldoc--invoke-doc-functions
+     eldoc-documentation-functions
+     (lambda (doc)
+       (when doc
+         (let ((buf (get-buffer-create "*eglot-doc*")))
+           (with-current-buffer buf
+             (read-only-mode -1)
+             (erase-buffer)
+             (insert doc)
+             (read-only-mode 1))
+           (display-buffer buf)))))))
+
+
+
 ;; Опционально: embak для контекстных действий
 (use-package embark
   :ensure t
@@ -580,6 +571,41 @@ one, an error is signaled."
     (org-edit-special)
     (indent-region (point-min) (point-max))
     (org-edit-src-exit)))
+
+(use-package hydra
+  :ensure t
+  :config
+  (defhydra my/hydra-zoom ()
+    "zoom"
+    ("k" text-scale-increase "in")
+    ("j" text-scale-decrease "out"))
+
+  ;; Определим hydra для управления окнами
+  (defhydra my/hydra-window (:hint nil)
+    "
+^Навигация^      ^Разделение^           ^Размер^                ^Прочее^
+^^^^^^^^------------------------------------------------------------------
+_h_ ←       _v_ вертикально     _H_ уменьшить ширину     _o_ другое окно
+_j_ ↓       _s_ горизонтально   _L_ увеличить ширину     _q_ выйти
+_k_ ↑       _d_ удалить окно    _J_ уменьшить высоту     
+_l_ →                          _K_ увеличить высоту      
+"
+    ("h" windmove-left)
+    ("j" windmove-down)
+    ("k" windmove-up)
+    ("l" windmove-right)
+    ("v" split-window-right)
+    ("s" split-window-below)
+    ("d" delete-window)
+    ("H" shrink-window-horizontally)
+    ("L" enlarge-window-horizontally)
+    ("J" shrink-window)
+    ("K" enlarge-window)
+    ;; ("u" (winner-undo))
+    ;; ("r" (winner-redo))
+    ("o" other-window)
+    ("q" nil :exit t))
+  )
 
 (menu-bar-mode -1)
 (tool-bar-mode -1)
@@ -705,68 +731,69 @@ one, an error is signaled."
 (use-package posframe
   :ensure t)
 
- (with-eval-after-load 'posframe
-(defvar my/doc-posframe-buffer "*doc-posframe*")
+(with-eval-after-load 'posframe
+  (defvar my/doc-posframe-buffer "*doc-posframe*")
 
-(defun my/hide-doc-posframe ()
-  "Скрыть всплывающее окно с документацией."
-  (interactive)
-  (posframe-hide-all))
+  (defun my/hide-doc-posframe ()
+    "Скрыть всплывающее окно с документацией."
+    (interactive)
+    (posframe-hide-all))
 
-(defun my/show-doc-posframe ()
-  "Показать документацию во всплывающем окне posframe."
-  (interactive)
-  (let* ((doc (or (and (fboundp 'eldoc--doc-buffer)
-                       (buffer-live-p (eldoc--doc-buffer))
-                       (with-current-buffer (eldoc--doc-buffer)
-                         (buffer-string)))
-                  (let ((sym (symbol-at-point)))
-                    (and sym (documentation sym)))
-                  "Нет документации.")))
-    (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (insert doc)
-        (goto-char (point-min))
-        (read-only-mode 1))
-      (use-local-map (let ((map (make-sparse-keymap)))
-                       (define-key map (kbd "C-g") #'my/hide-doc-posframe)
-                       map)))
-    (posframe-show my/doc-posframe-buffer
-                   :string nil
-                   :position (point)
-                   :internal-border-width 10
-                   :border-width 1
-                   :background-color (face-background 'tooltip nil t)
-                   :accept-focus nil
-                   :timeout nil)))
+  (defun my/show-doc-posframe ()
+    "Показать документацию во всплывающем окне posframe."
+    (interactive)
+    (let* ((doc (or (and (fboundp 'eldoc--doc-buffer)
+			 (buffer-live-p (eldoc--doc-buffer))
+			 (with-current-buffer (eldoc--doc-buffer)
+                           (buffer-string)))
+                    (let ((sym (symbol-at-point)))
+                      (and sym (documentation sym)))
+                    "Нет документации.")))
+      (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
+	(let ((inhibit-read-only t))
+          (erase-buffer)
+          (insert doc)
+          (goto-char (point-min))
+          (read-only-mode 1))
+	(use-local-map (let ((map (make-sparse-keymap)))
+			 (define-key map (kbd "C-g") #'my/hide-doc-posframe)
+			 map)))
+      (posframe-show my/doc-posframe-buffer
+                     :string nil
+                     :position (point)
+                     :internal-border-width 10
+                     :border-width 1
+                     :background-color (face-background 'tooltip nil t)
+                     :accept-focus nil
+                     :timeout nil)))
 
-;; (defun my/show-doc-posframe ()
-;;   "Показать документацию во всплывающем окне posframe."
-;;   (interactive)
-;;   (let* ((sym (symbol-at-point))
-;;          (doc (or (and sym (documentation sym)) "Нет документации.")))
-;;     (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
-;;       (let ((inhibit-read-only t))
-;;       (erase-buffer)
-;;       (insert doc)
-;;       (goto-char (point-min))
-;;       (read-only-mode 1))
-;;       (use-local-map (let ((map (make-sparse-keymap)))
-;;                        (define-key map (kbd "C-g") #'my/hide-doc-posframe)
-;;                        map)))
-;;     (posframe-show my/doc-posframe-buffer
-;;                    :string nil ;; nil — использовать содержимое буфера
-;;                    :position (point)
-;;                    :internal-border-width 10
-;;                    :border-width 1
-;;                    :background-color (face-background 'tooltip nil t)
-;;                    :accept-focus nil ;; без фокуса — иначе posframe зависнет
-;;                    :timeout nil)))
+  ;; (defun my/show-doc-posframe ()
+  ;;   "Показать документацию во всплывающем окне posframe."
+  ;;   (interactive)
+  ;;   (let* ((sym (symbol-at-point))
+  ;;          (doc (or (and sym (documentation sym)) "Нет документации.")))
+  ;;     (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
+  ;;       (let ((inhibit-read-only t))
+  ;;       (erase-buffer)
+  ;;       (insert doc)
+  ;;       (goto-char (point-min))
+  ;;       (read-only-mode 1))
+  ;;       (use-local-map (let ((map (make-sparse-keymap)))
+  ;;                        (define-key map (kbd "C-g") #'my/hide-doc-posframe)
+  ;;                        map)))
+  ;;     (posframe-show my/doc-posframe-buffer
+  ;;                    :string nil ;; nil — использовать содержимое буфера
+  ;;                    :position (point)
+  ;;                    :internal-border-width 10
+  ;;                    :border-width 1
+  ;;                    :background-color (face-background 'tooltip nil t)
+  ;;                    :accept-focus nil ;; без фокуса — иначе posframe зависнет
+  ;;                    :timeout nil)))
 
-;; Привязка в evil-normal-state
-(define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
-(define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe))
+  ;; Привязка в evil-normal-state
+   (define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
+   (define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe)
+  )
 
 (use-package rainbow-delimiters
   :ensure t
@@ -853,7 +880,7 @@ one, an error is signaled."
       :ensure t
       :config
       ;; Global settings (defaults)
-      (load-theme 'doom-monokai-machine t)
+      (load-theme 'doom-one t)
 
       ;; Enable flashing mode-line on errors
       (doom-themes-visual-bell-config)
@@ -1039,3 +1066,9 @@ one, an error is signaled."
   which-key-allow-imprecise-window-fit nil
   which-key-separator " → " 
  ))
+
+(windmove-default-keybindings 'meta)
+(global-set-key (kbd "M-h") 'windmove-left)
+(global-set-key (kbd "M-j") 'windmove-down)
+(global-set-key (kbd "M-k") 'windmove-up)
+(global-set-key (kbd "M-l") 'windmove-right)

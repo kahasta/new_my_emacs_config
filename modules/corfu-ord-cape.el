@@ -6,7 +6,6 @@
   ;; Example configuration for Consult
   (use-package consult
     :ensure t
-    ;; Replace bindings. Lazily loaded by `use-package'.
     :bind (;; C-c bindings in `mode-specific-map'
            ("C-c M-x" . consult-mode-command)
            ("C-c h" . consult-history)
@@ -110,7 +109,7 @@
   (use-package orderless
     :ensure t
     :custom
-    (completion-styles '(orderless basic))
+    (completion-styles '(orderless basic flex))
     (completion-category-defaults nil)
     :init
     (setq orderless-matching-styles '(orderless-literal orderless-regexp orderless-flex)))
@@ -141,28 +140,33 @@
   (use-package cape
     :ensure t
     :init
-    ;; (defun my/safe-add-capf (func)
-    ;;   (when (fboundp func)
-    ;;     (add-to-list 'completion-at-point-functions func)))
-    ;; (defun my/setup-cape ()
-    ;;   (my/safe-add-capf #'cape-file)
-    ;;   (when (derived-mode-p 'emacs-lisp-mode)
-    ;;     (my/safe-add-capf #'cape-elisp-symbol))
-    ;;   (when (derived-mode-p 'text-mode)
-    ;;     (my/safe-add-capf #'cape-ispell))
-    ;;   (when (bound-and-true-p eglot--managed-mode)
-    ;;     (my/safe-add-capf #'cape-capf-buster)))
-    ;; (add-hook 'prog-mode-hook #'my/setup-cape)
-    ;; (add-hook 'text-mode-hook #'my/setup-cape)
-    ;; ;; Добавляем полезные источники
-    (add-to-list 'completion-at-point-functions #'cape-file)
-    (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-    (add-to-list 'completion-at-point-functions #'cape-symbol)
-    (add-to-list 'completion-at-point-functions #'cape-keyword)
-    (add-hook 'text-mode-hook
-              (lambda () (add-to-list 'completion-at-point-functions #'cape-ispell))
-     	      ;; Примеры: cape-keyword, cape-line, cape-tex и др.
-	      ))
+    (defun my/safe-add-capf (func)
+      (when (fboundp func)
+        (add-to-list 'completion-at-point-functions func)))
+    (defun my/setup-cape ()
+      (my/safe-add-capf #'cape-file)
+      (when (derived-mode-p 'emacs-lisp-mode)
+        (my/safe-add-capf #'cape-elisp-symbol))
+      (when (derived-mode-p 'text-mode)
+        (my/safe-add-capf #'cape-ispell))
+      (when (bound-and-true-p eglot--managed-mode)
+        (my/safe-add-capf #'cape-capf-buster)))
+    (add-hook 'prog-mode-hook #'my/setup-cape)
+    (add-hook 'text-mode-hook #'my/setup-cape)
+    :config
+    (when (bound-and-true-p eglot--managed-mode)
+      (add-to-list 'completion-at-point-functions #'cape-capf-buster))
+
+    )
+  ;; Добавляем полезные источники
+  ;; (add-to-list 'completion-at-point-functions #'cape-file)
+  ;; (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+  ;; (add-to-list 'completion-at-point-functions #'cape-symbol)
+  ;; (add-to-list 'completion-at-point-functions #'cape-keyword)
+  ;; (add-hook 'text-mode-hook
+  ;;           (lambda () (add-to-list 'completion-at-point-functions #'cape-ispell))
+  ;;  	      ;; Примеры: cape-keyword, cape-line, cape-tex и др.
+  ;; 	      ))
 
   (use-package kind-icon
     :ensure t
@@ -174,7 +178,7 @@
     :config
     (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-  (add-to-list 'completion-at-point-functions #'cape-lsp)
+
   (setq auto-complete-mode #'corfu-mode)
 
   (message "Corfu initializing complete.")

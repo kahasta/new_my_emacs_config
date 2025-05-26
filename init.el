@@ -93,12 +93,12 @@
 (setq auto-save-file-name-transforms
       `((".*" ,temporary-file-directory t)))
 
-(defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
 
 
 ;; Вызываем нашу функцию
 (my/load-org-config)
 
+(defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
 
 
 (custom-set-variables
@@ -107,10 +107,14 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(custom-enabled-themes '(tango-dark))
+ '(elfeed-feeds
+   '("https://www.youtube.com/feeds/videos.xml?channel_id=UC0uTPqBCFIpZxlz_Lv1tk_g"
+     "https://www.youtube.com/feeds/videos.xml?channel_id=UCdKuE7a2QZeHPhDntXVZ91w"
+     "www.youtube.com"))
  '(package-selected-packages
-   '(ace-window dash diff-hl emojify evil expand-region flycheck forge
-		magit marginalia posframe projectile rust-mode toc-org
-		treemacs ultra-scroll xclip))
+   '(ace-window dash diff-hl emojify evil expand-region flycheck forge magit
+		marginalia posframe projectile rust-mode toc-org treemacs
+		ultra-scroll xclip))
  '(package-vc-selected-packages
    '((ultra-scroll :url "https://github.com/jdtsmith/ultra-scroll")))
  '(safe-local-variable-values '((eval setq elisp-flymake-byte-compile t))))
