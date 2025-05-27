@@ -98,4 +98,4 @@
   (message "Ivy + Counsel initializing complete.")
   )
 
-(provide 'ivy-counsel-mod)
+(provide 'ivy-mod)

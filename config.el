@@ -5,10 +5,11 @@
 	  (lambda ()
 	    ;;; ----------> add to this your modules
 
-	    ;;   (require 'company-mod)
+	    ;; (require 'company-mod)
 	    (require 'eglot-mod)
-	    (require 'corfu-ord-cape)
-	    (require 'ivy-counsel-mod)
+	    ;; (require 'corfu-ord-cape)
+	    (require 'autocomplete-mod)
+	    (require 'ivy-mod)
 	    (require 'vertico-mod)
 	    (require 'treemacs-mod)
 	    (require 'magit-mod)
@@ -89,7 +90,7 @@
     :prefix "SPC" ;; set leader
     :global-prefix "M-SPC") ;; access leader in insert mode
   (kahasta/leader-keys
-    "SPC" '(counsel-M-x :wk "Counsel M-x")
+    "SPC" '(counsel-M-x :wk "M-x")
     "." '(find-file :wk "Find file")
     "f c" '((lambda () (interactive) (find-file (concat my/config-dir "config.org"))) :wk "Edit emacs config")
     "f r" '(counsel-recentf :wk "Find recent files")
@@ -678,18 +679,6 @@ _l_ →                          _K_ увеличить высоту
    "q" '(flutter-quit :wk "Flutter quit")
 ))
 
-(use-package marginalia
-  :ensure t
-  :after ivy
-  :config
-  (setq marginalia-annotators
-	'(marginalia-annotators-heavy marginalia-annotators-light nil))
-
-;; Кастомизация отображения
-  (setq marginalia-align 'right
-	marginalia-field-width 100)
-  (marginalia-mode 1))
-
 (with-eval-after-load 'general
   (general-define-key
    :states '(normal)
@@ -712,6 +701,13 @@ _l_ →                          _K_ увеличить высоту
   :ensure t
   :commands toc-org-enable
   :init (add-hook 'org-mode-hook 'toc-org-enable))
+
+(use-package org-modern
+  :ensure t
+  :custom
+  (org-modern-fold-stars '(("▶" . "▼") ("▷" . "▽") ("▹" . "▿") ("▸" . "▾")))
+  :config
+  (with-eval-after-load 'org (global-org-modern-mode)))
 
 (add-hook 'org-mode-hook 'org-indent-mode)
 (use-package org-bullets :ensure t)

@@ -1,4 +1,3 @@
-#+TITLE: My Emacs config
 #+AUTHOR: kahasta
 #+DESCRIPTION: my personal emacs config
 #+STARTUP: showeverything
@@ -42,10 +41,10 @@
   - [[#lua][lua]]
   - [[#rust][rust]]
   - [[#flutter][flutter]]
-- [[#marginalia][MARGINALIA]]
 - [[#org-mode][ORG MODE]]
   - [[#define-m-functions-keybindings][Define M functions keybindings]]
   - [[#enabling-table-of-contents][Enabling Table of Contents]]
+  - [[#org-modern][Org modern]]
   - [[#enabling-org-bullets][Enabling Org Bullets]]
   - [[#disable-electric-indent][Disable Electric Indent]]
   - [[#source-code-block-tag-expansion][Source Code Block Tag Expansion]]
@@ -74,6 +73,7 @@
 #+begin_src emacs-lisp
 (add-to-list 'load-path (concat my/config-dir "modules/"))
 #+end_src
+
 ** Plug modules
 #+begin_src emacs-lisp
 (require 'elpaca-setup)
@@ -81,10 +81,10 @@
 	  (lambda ()
 	    ;;; ----------> add to this your modules
 
-	    ;;   (require 'company-mod)
+	    ;; (require 'company-mod)
 	    (require 'eglot-mod)
-	    (require 'corfu-ord-cape)
-	    (require 'ivy-counsel-mod)
+	    (require 'autocomplete-mod)
+	    (require 'ivy-mod)
 	    (require 'vertico-mod)
 	    (require 'treemacs-mod)
 	    (require 'magit-mod)
@@ -100,6 +100,7 @@
 (setq scroll-conservatively 10 
       scroll-margin 15)
 (winner-mode)
+;; VPN enable
 (setq url-gateway-method 'socks)
 (setq socks-server '("Default server" "127.0.0.1" 8085 5))
 #+end_src
@@ -186,7 +187,7 @@
     :prefix "SPC" ;; set leader
     :global-prefix "M-SPC") ;; access leader in insert mode
   (kahasta/leader-keys
-    "SPC" '(counsel-M-x :wk "Counsel M-x")
+    "SPC" '(counsel-M-x :wk "M-x")
     "." '(find-file :wk "Find file")
     "f c" '((lambda () (interactive) (find-file (concat my/config-dir "config.org"))) :wk "Edit emacs config")
     "f r" '(counsel-recentf :wk "Find recent files")
@@ -907,20 +908,20 @@ Emacs has built-in programming language modes for Lisp, Scheme, DSSSL, Ada, ASM,
 # ;; show hidden files
 # #+end_src
 
-* MARGINALIA
-#+begin_src emacs-lisp
-(use-package marginalia
-  :ensure t
-  :after ivy
-  :config
-  (setq marginalia-annotators
-	'(marginalia-annotators-heavy marginalia-annotators-light nil))
+# * MARGINALIA
+# #+begin_src emacs-lisp
+# (use-package marginalia
+#   :ensure t
+#   :after ivy
+#   :config
+#   (setq marginalia-annotators
+# 	'(marginalia-annotators-heavy marginalia-annotators-light nil))
 
-;; Кастомизация отображения
-  (setq marginalia-align 'right
-	marginalia-field-width 100)
-  (marginalia-mode 1))
-#+end_src
+# ;; Кастомизация отображения
+#   (setq marginalia-align 'right
+# 	marginalia-field-width 100)
+#   (marginalia-mode 1))
+# #+end_src
 
 * ORG MODE
 ** Define M functions keybindings
@@ -951,7 +952,15 @@ Emacs has built-in programming language modes for Lisp, Scheme, DSSSL, Ada, ASM,
   :init (add-hook 'org-mode-hook 'toc-org-enable))
 #+end_src
 
-
+** Org modern
+#+begin_src emacs-lisp
+(use-package org-modern
+  :ensure t
+  :custom
+  (org-modern-fold-stars '(("▶" . "▼") ("▷" . "▽") ("▹" . "▿") ("▸" . "▾")))
+  :config
+  (with-eval-after-load 'org (global-org-modern-mode)))
+#+end_src
 ** Enabling Org Bullets
 Org-bullets gives us attractive bullets rather than asterisks.
 
