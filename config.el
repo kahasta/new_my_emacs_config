@@ -7,7 +7,6 @@
 
 	    ;; (require 'company-mod)
 	    (require 'eglot-mod)
-	    ;; (require 'corfu-ord-cape)
 	    (require 'autocomplete-mod)
 	    (require 'ivy-mod)
 	    (require 'vertico-mod)
@@ -22,6 +21,7 @@
 (setq scroll-conservatively 10 
       scroll-margin 15)
 (winner-mode)
+;; VPN enable
 (setq url-gateway-method 'socks)
 (setq socks-server '("Default server" "127.0.0.1" 8085 5))
 
@@ -52,17 +52,48 @@
 (with-eval-after-load 'lsp-mode
   (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
 
-(defun my/toggle-comment ()
-  (interactive)
-  (if (region-active-p)
-      (comment-or-uncomment-region (region-beginning) (region-end))
-    (comment-or-uncomment-region (line-beginning-position) (line-end-position))))
+(use-package devil
+  :ensure t
+  :config
+  (global-devil-mode 1)) ;; включаем devil-mode глобально
+
+(defun my/disable-comma-key ()
+  "Убрать любые привязки к клавише `,` в evil."
+  (dolist (map (list
+                evil-normal-state-map
+                evil-visual-state-map
+                evil-motion-state-map
+                evil-insert-state-map
+                evil-replace-state-map
+                evil-emacs-state-map))
+    (when map
+      (define-key map (kbd ",") nil))))
+
+;; выполнить после полной загрузки evil и его плагинов
+(with-eval-after-load 'evil
+  (my/disable-comma-key))
+
+(with-eval-after-load 'evil-collection
+  (my/disable-comma-key))
+
+(with-eval-after-load 'evil-leader
+  (my/disable-comma-key))
+
+(with-eval-after-load 'devil
+  (global-set-key (kbd "C-,") 'global-devil-mode))
+
 (defun my/reload-config ()
   "Reload Emacs configuration safely."
   (interactive)
   (message "Reloading init file...")
   (load user-init-file nil 'nomessage)
   (message "Init file reloaded!"))
+
+(defun my/toggle-comment ()
+  (interactive)
+  (if (region-active-p)
+      (comment-or-uncomment-region (region-beginning) (region-end))
+    (comment-or-uncomment-region (line-beginning-position) (line-end-position))))
 
 ;; (defun my/sudo-edit ()
 ;;  "Edit file as root with explicit bash shell"
@@ -191,7 +222,8 @@
     "t e" '(eldoc-box-hover-at-point-mode :wk "Eldoc box hover toggle")
     "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
     "t T" '(visual-line-mode :wk "Toggle truncated lines")
-    "t t" '(load-theme :wk "Load theme"))
+    "t t" '(load-theme :wk "Load theme")
+)
 
   (kahasta/leader-keys
     "u" '(:ignore t :wk "Utils")
@@ -875,6 +907,8 @@ _l_ →                          _K_ увеличить высоту
 (use-package telega
   :ensure t
   :commands (telega)
+  :hook
+  ('telega-chat-pre-message . #'telega-msg-ignore-blocked-sender)
   :defer t)
 (with-eval-after-load 'telega
   (define-key global-map (kbd "C-c t") telega-prefix-map))

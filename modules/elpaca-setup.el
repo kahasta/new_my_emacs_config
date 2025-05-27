@@ -37,7 +37,8 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
-
+(setq elpaca-queue-limit 15)
+(setq use-package-always-ensure t)
 ;;(elpaca nil (message "deffered"))
 
 (provide 'elpaca-setup)

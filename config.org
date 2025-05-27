@@ -134,16 +134,40 @@
 (with-eval-after-load 'lsp-mode
   (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
 
+(use-package devil
+  :ensure t
+  :config
+  (global-devil-mode 1)) ;; включаем devil-mode глобально
+
+(defun my/disable-comma-key ()
+  "Убрать любые привязки к клавише `,` в evil."
+  (dolist (map (list
+                evil-normal-state-map
+                evil-visual-state-map
+                evil-motion-state-map
+                evil-insert-state-map
+                evil-replace-state-map
+                evil-emacs-state-map))
+    (when map
+      (define-key map (kbd ",") nil))))
+
+;; выполнить после полной загрузки evil и его плагинов
+(with-eval-after-load 'evil
+  (my/disable-comma-key))
+
+(with-eval-after-load 'evil-collection
+  (my/disable-comma-key))
+
+(with-eval-after-load 'evil-leader
+  (my/disable-comma-key))
+
+(with-eval-after-load 'devil
+  (global-set-key (kbd "C-,") 'global-devil-mode))
 #+END_SRC
 
 ** My functions
 *** Reload Emacs config
 #+begin_src emacs-lisp
-(defun my/toggle-comment ()
-  (interactive)
-  (if (region-active-p)
-      (comment-or-uncomment-region (region-beginning) (region-end))
-    (comment-or-uncomment-region (line-beginning-position) (line-end-position))))
 (defun my/reload-config ()
   "Reload Emacs configuration safely."
   (interactive)
@@ -152,6 +176,15 @@
   (message "Init file reloaded!"))
 #+end_src
 
+
+*** My comment fn
+#+begin_src emacs-lisp
+(defun my/toggle-comment ()
+  (interactive)
+  (if (region-active-p)
+      (comment-or-uncomment-region (region-beginning) (region-end))
+    (comment-or-uncomment-region (line-beginning-position) (line-end-position))))
+#+end_src 
 
 *** My Sudo edit
 #+begin_src emacs-lisp
@@ -288,7 +321,8 @@
     "t e" '(eldoc-box-hover-at-point-mode :wk "Eldoc box hover toggle")
     "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
     "t T" '(visual-line-mode :wk "Toggle truncated lines")
-    "t t" '(load-theme :wk "Load theme"))
+    "t t" '(load-theme :wk "Load theme")
+)
 
   (kahasta/leader-keys
     "u" '(:ignore t :wk "Utils")
@@ -1180,6 +1214,8 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
 (use-package telega
   :ensure t
   :commands (telega)
+  :hook
+  ('telega-chat-pre-message . #'telega-msg-ignore-blocked-sender)
   :defer t)
 (with-eval-after-load 'telega
   (define-key global-map (kbd "C-c t") telega-prefix-map))

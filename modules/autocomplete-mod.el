@@ -3,6 +3,7 @@
   :custom ((corfu-auto t)
 	   (corfu-auto-delay 0)
 	   (corfu-auto-prefix 1)
+	   (corfu-echo-documentation 0.25)
 	   (corfu-cycle t)
 	   (corfu-on-exact-match nil)
 	   (tab-always-indent 'complete))
@@ -32,6 +33,16 @@
 
   (with-eval-after-load 'lsp-mode
     (setq lsp-completion-provider :none)))
+
+
+(use-package corfu-popupinfo
+  :ensure t
+  :after corfu
+  :hook (corfu-mode . corfu-popupinfo-mode)
+  :config
+  (setq corfu-popupinfo-delay 0.5
+        corfu-popupinfo-max-width 70
+        corfu-popupinfo-max-height 20))
 
 (use-package tabnine
   :ensure t
@@ -125,5 +136,15 @@
   :ensure t
   :bind (("M-+" . tempel-complete) ;; Alternative tempel-expand
 	 ("M-*" . tempel-insert)))
+
+(defun my/org-mode-corfu-setup ()
+  "Disable Corfu completion for Org < templates like <s, <e."
+  (setq-local corfu-auto nil)
+  (setq-local completion-at-point-functions
+              (list (lambda ()
+                      (unless (looking-back "^<\\w*" (line-beginning-position))
+                        (cape-dabbrev))))))
+
+(add-hook 'org-mode-hook #'my/org-mode-corfu-setup)
 
 (provide 'autocomplete-mod)
