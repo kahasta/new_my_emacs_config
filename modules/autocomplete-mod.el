@@ -1,6 +1,7 @@
 (use-package corfu
   :ensure t
   :custom ((corfu-auto t)
+	   (corfu-quit-no-match 'separator)
 	   (corfu-auto-delay 0)
 	   (corfu-auto-prefix 1)
 	   (corfu-echo-documentation 0.25)

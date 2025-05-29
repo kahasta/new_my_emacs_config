@@ -52,35 +52,31 @@
 (with-eval-after-load 'lsp-mode
   (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
 
-(use-package devil
-  :ensure t
-  :config
-  (global-devil-mode 1)) ;; включаем devil-mode глобально
 
-(defun my/disable-comma-key ()
-  "Убрать любые привязки к клавише `,` в evil."
-  (dolist (map (list
-                evil-normal-state-map
-                evil-visual-state-map
-                evil-motion-state-map
-                evil-insert-state-map
-                evil-replace-state-map
-                evil-emacs-state-map))
-    (when map
-      (define-key map (kbd ",") nil))))
+;; (defun my/disable-comma-key ()
+;;   "Убрать любые привязки к клавише `,` в evil."
+;;   (dolist (map (list
+;;                 evil-normal-state-map
+;;                 evil-visual-state-map
+;;                 evil-motion-state-map
+;;                 evil-insert-state-map
+;;                 evil-replace-state-map
+;;                 evil-emacs-state-map))
+;;     (when map
+;;       (define-key map (kbd ",") nil))))
 
-;; выполнить после полной загрузки evil и его плагинов
-(with-eval-after-load 'evil
-  (my/disable-comma-key))
+;; ;; выполнить после полной загрузки evil и его плагинов
+;; (with-eval-after-load 'evil
+;;   (my/disable-comma-key))
 
-(with-eval-after-load 'evil-collection
-  (my/disable-comma-key))
+;; (with-eval-after-load 'evil-collection
+;;   (my/disable-comma-key))
 
-(with-eval-after-load 'evil-leader
-  (my/disable-comma-key))
+;; (with-eval-after-load 'evil-leader
+;;   (my/disable-comma-key))
 
-(with-eval-after-load 'devil
-  (global-set-key (kbd "C-,") 'global-devil-mode))
+;; (with-eval-after-load 'devil
+;;   (global-set-key (kbd "C-,") 'global-devil-mode))
 
 (defun my/reload-config ()
   "Reload Emacs configuration safely."
@@ -183,7 +179,10 @@
   (kahasta/leader-keys
     "g" '(:ignore t :wk "go to")
     "g g" '(magit-status :wk "Magit status")
-    "g c" '(avy-goto-char :wk "Jump to char"))
+    "g c" '(avy-goto-char :wk "Jump to char")
+    "g d" '(my/hydra-jump-to-directory/body :wk "Jump to char")
+
+    )
 
   (kahasta/leader-keys
     "h" '(:ignore t :wk "Help")
@@ -223,7 +222,7 @@
     "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
     "t T" '(visual-line-mode :wk "Toggle truncated lines")
     "t t" '(load-theme :wk "Load theme")
-)
+    )
 
   (kahasta/leader-keys
     "u" '(:ignore t :wk "Utils")
@@ -638,6 +637,13 @@ _l_ →                          _K_ увеличить высоту
     ;; ("r" (winner-redo))
     ("o" other-window)
     ("q" nil :exit t))
+
+  (defhydra my/hydra-jump-to-directory
+    (:color amaranth)
+    "Jump to directory"
+    ("p" (find-file "/home/kahasta/Projects") "Projects")
+    ("c" (find-file "/home/kahasta/.config") ".config")
+    ("q" nil "Quit" :color blue))
   )
 
 (menu-bar-mode -1)
@@ -907,6 +913,9 @@ _l_ →                          _K_ увеличить высоту
 (use-package telega
   :ensure t
   :commands (telega)
+  :config
+  (setq
+   telega-translate-to-language-by-default "ru")
   :hook
   ('telega-chat-pre-message . #'telega-msg-ignore-blocked-sender)
   :defer t)
