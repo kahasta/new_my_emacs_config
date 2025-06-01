@@ -1,10 +1,14 @@
 (add-to-list 'load-path (concat my/config-dir "modules/"))
 
 (require 'elpaca-setup)
+;; Убедимся, что use-package загружен перед использованием
+(elpaca elpaca-use-package (elpaca-use-package-mode))
 (add-hook 'after-init-hook
 	  (lambda ()
-	    ;;; ----------> add to this your modules
+	    ;;; ---------- add to this your modules
 
+	     (require 'evil-mode-mod)
+;;	    (require 'meow-mod)
 	    ;; (require 'company-mod)
 	    (require 'eglot-mod)
 	    (require 'autocomplete-mod)
@@ -13,6 +17,16 @@
 	    (require 'treemacs-mod)
 	    (require 'magit-mod)
 	    ;; (require 'awesome-tab-mod)
+
+	    ;; --- Mode Line mods
+	    (require 'doom-line-mod)
+	    ;; (require 'punch-line-mod)
+	    ;; (require 'moody-mod)
+	    ;; (require 'smart-mode-line-mod)
+	    ;; (require 'telephone-line-mod)
+	    ;; --- Mode Line mods end
+
+	    (require 'en-evil-paredit-mod)
 	    (require 'centaur-tabs-mod)
 	    ))
 
@@ -24,59 +38,6 @@
 ;; VPN enable
 (setq url-gateway-method 'socks)
 (setq socks-server '("Default server" "127.0.0.1" 8085 5))
-
-(setq evil-want-keybinding nil)
-(setq evil-want-integration t)
-;; Убедимся, что use-package загружен перед использованием
-(elpaca elpaca-use-package (elpaca-use-package-mode))
-
-;; Установка evil с явным ожиданием загрузки
-(use-package evil
-  :ensure t
-  :demand t  ; Загружать немедленно
-  :init
-  (setq evil-vsplit-window-right t)
-  (setq evil-split-window-below t)
-  (setq evil-want-C-u-scroll t)
-  (evil-mode))  ; Явное включение режима
-
-;; Evil Collection должен загружаться ПОСЛЕ evil
-(use-package evil-collection
-  :ensure t
-  :after evil
-  :demand t
-  :config
-  ;; (setq evil-collection-mode-list '(dashboard dired ibuffer eshell org))
-  (evil-collection-init))
-
-(with-eval-after-load 'lsp-mode
-  (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
-
-
-;; (defun my/disable-comma-key ()
-;;   "Убрать любые привязки к клавише `,` в evil."
-;;   (dolist (map (list
-;;                 evil-normal-state-map
-;;                 evil-visual-state-map
-;;                 evil-motion-state-map
-;;                 evil-insert-state-map
-;;                 evil-replace-state-map
-;;                 evil-emacs-state-map))
-;;     (when map
-;;       (define-key map (kbd ",") nil))))
-
-;; ;; выполнить после полной загрузки evil и его плагинов
-;; (with-eval-after-load 'evil
-;;   (my/disable-comma-key))
-
-;; (with-eval-after-load 'evil-collection
-;;   (my/disable-comma-key))
-
-;; (with-eval-after-load 'evil-leader
-;;   (my/disable-comma-key))
-
-;; (with-eval-after-load 'devil
-;;   (global-set-key (kbd "C-,") 'global-devil-mode))
 
 (defun my/reload-config ()
   "Reload Emacs configuration safely."
@@ -523,6 +484,12 @@
    ;; ("K" .  eldoc-box-help-at-point)
    ("C-h B" . embark-bindings)))
 
+(use-package iedit
+  :ensure t
+  :after evil
+  :bind (:map evil-normal-state-map
+              ("C-c i" . iedit-mode)))
+
 (use-package flycheck
   :ensure t
   :defer t
@@ -825,8 +792,8 @@ _l_ →                          _K_ увеличить высоту
   ;;                    :timeout nil)))
 
   ;; Привязка в evil-normal-state
-   (define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
-   (define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe)
+   ;; (define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
+   ;; (define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe)
   )
 
 (use-package rainbow-delimiters
@@ -941,15 +908,6 @@ _l_ →                          _K_ увеличить высоту
       (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
             doom-themes-enable-italic t) ; if nil, italics is universally disabled
 )
-
-      (use-package doom-modeline
-        :ensure t
-        :init (doom-modeline-mode 1)
-	:config
-	(setq doom-modeline-height 30
-	      doom-modeline-bar-width 5
-	      doom-modeline-persp-name t
-	      doom-modeline-persp-icon t))
 
 ;; (use-package tramp
 ;;   :ensure t

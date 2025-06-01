@@ -95,11 +95,11 @@
       `((".*" ,temporary-file-directory t)))
 
 
+(defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
 
 ;; Вызываем нашу функцию
 (my/load-org-config)
 
-(defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
 
 
 (custom-set-variables
@@ -108,14 +108,24 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(custom-enabled-themes '(tango-dark))
+ '(custom-safe-themes
+   '("9b21c848d09ba7df8af217438797336ac99cbbbc87a08dc879e9291673a6a631" default))
  '(elfeed-feeds
    '("https://www.youtube.com/feeds/videos.xml?channel_id=UC0uTPqBCFIpZxlz_Lv1tk_g"
      "https://www.youtube.com/feeds/videos.xml?channel_id=UCdKuE7a2QZeHPhDntXVZ91w"
      "www.youtube.com"))
  '(package-selected-packages
-   '(ace-window dash diff-hl emojify evil expand-region flycheck forge magit
-		marginalia posframe projectile rust-mode toc-org treemacs
-		ultra-scroll xclip))
+   '(ace-window aggressive-indent all-the-icons all-the-icons-ivy-rich cape
+		centaur-tabs company consult-eglot consult-yasnippet corfu
+		corfu-popupinfo corfu-prescient counsel dart-mode dash devil
+		diff-hl diminish dockerfile-mode doom-modeline embark-consult
+		emojify enhanced-evil-paredit evil evil-keypad expand-region
+		flycheck flycheck-eglot git git-gutter github hydra ivy-rich
+		kind-icon lua-mode magit marginalia orderless org-modern
+		prescient projectile rainbow-delimiters rainbow-mode rust-mode
+		smartparens smex tabnine tempel toc-org treemacs ultra-scroll
+		vertico-posframe vertico-prescient vundo xclip yaml-mode
+		yasnippet))
  '(package-vc-selected-packages
    '((ultra-scroll :url "https://github.com/jdtsmith/ultra-scroll")))
  '(safe-local-variable-values '((eval setq elisp-flymake-byte-compile t))))

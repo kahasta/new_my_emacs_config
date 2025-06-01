@@ -8,7 +8,6 @@
   - [[#adding-the-modules-directory-to-path][Adding the modules directory to path]]
   - [[#plug-modules][Plug modules]]
   - [[#init][Init]]
-  - [[#load-evil-mode][Load Evil Mode]]
   - [[#my-functions][My functions]]
   - [[#general-keybindings][General Keybindings]]
 - [[#ace-window][ACE-WINDOW]]
@@ -27,6 +26,7 @@
 - [[#expand-region][EXPAND-REGION]]
 - [[#extension-emacs-utils][EXTENSION EMACS UTILS]]
 - [[#eldoc-box-helpful-embark][ELDOC-BOX HELPFUL EMBARK]]
+- [[#multi-cursor][MULTI-CURSOR]]
 - [[#flycheck][FLYCHECK]]
 - [[#flymake][FLYMAKE]]
 - [[#fonts][FONTS]]
@@ -77,10 +77,14 @@
 ** Plug modules
 #+begin_src emacs-lisp
 (require 'elpaca-setup)
+;; Убедимся, что use-package загружен перед использованием
+(elpaca elpaca-use-package (elpaca-use-package-mode))
 (add-hook 'after-init-hook
 	  (lambda ()
-	    ;;; ----------> add to this your modules
+	    ;;; ---------- add to this your modules
 
+	     (require 'evil-mode-mod)
+;;	    (require 'meow-mod)
 	    ;; (require 'company-mod)
 	    (require 'eglot-mod)
 	    (require 'autocomplete-mod)
@@ -89,6 +93,16 @@
 	    (require 'treemacs-mod)
 	    (require 'magit-mod)
 	    ;; (require 'awesome-tab-mod)
+
+	    ;; --- Mode Line mods
+	    (require 'doom-line-mod)
+	    ;; (require 'punch-line-mod)
+	    ;; (require 'moody-mod)
+	    ;; (require 'smart-mode-line-mod)
+	    ;; (require 'telephone-line-mod)
+	    ;; --- Mode Line mods end
+
+	    (require 'en-evil-paredit-mod)
 	    (require 'centaur-tabs-mod)
 	    ))
 #+end_src
@@ -105,61 +119,6 @@
 (setq socks-server '("Default server" "127.0.0.1" 8085 5))
 #+end_src
 
-** Load Evil Mode
-#+BEGIN_SRC emacs-lisp
-(setq evil-want-keybinding nil)
-(setq evil-want-integration t)
-;; Убедимся, что use-package загружен перед использованием
-(elpaca elpaca-use-package (elpaca-use-package-mode))
-
-;; Установка evil с явным ожиданием загрузки
-(use-package evil
-  :ensure t
-  :demand t  ; Загружать немедленно
-  :init
-  (setq evil-vsplit-window-right t)
-  (setq evil-split-window-below t)
-  (setq evil-want-C-u-scroll t)
-  (evil-mode))  ; Явное включение режима
-
-;; Evil Collection должен загружаться ПОСЛЕ evil
-(use-package evil-collection
-  :ensure t
-  :after evil
-  :demand t
-  :config
-  ;; (setq evil-collection-mode-list '(dashboard dired ibuffer eshell org))
-  (evil-collection-init))
-
-(with-eval-after-load 'lsp-mode
-  (define-key evil-normal-state-map (kbd "K") nil))  ; Отключаем их обработчик
-
-
-;; (defun my/disable-comma-key ()
-;;   "Убрать любые привязки к клавише `,` в evil."
-;;   (dolist (map (list
-;;                 evil-normal-state-map
-;;                 evil-visual-state-map
-;;                 evil-motion-state-map
-;;                 evil-insert-state-map
-;;                 evil-replace-state-map
-;;                 evil-emacs-state-map))
-;;     (when map
-;;       (define-key map (kbd ",") nil))))
-
-;; ;; выполнить после полной загрузки evil и его плагинов
-;; (with-eval-after-load 'evil
-;;   (my/disable-comma-key))
-
-;; (with-eval-after-load 'evil-collection
-;;   (my/disable-comma-key))
-
-;; (with-eval-after-load 'evil-leader
-;;   (my/disable-comma-key))
-
-;; (with-eval-after-load 'devil
-;;   (global-set-key (kbd "C-,") 'global-devil-mode))
-#+END_SRC
 
 ** My functions
 *** Reload Emacs config
@@ -681,6 +640,15 @@ This package implements hiding or abbreviation of the modeline displays (lighter
 
 
 #+end_src
+
+* MULTI-CURSOR
+#+begin_src emacs-lisp
+(use-package iedit
+  :ensure t
+  :after evil
+  :bind (:map evil-normal-state-map
+              ("C-c i" . iedit-mode)))
+#+end_src
 * FLYCHECK
 Install luacheck from your Linux distro’s repositories for flycheck to work correctly with lua files.  Install python-pylint for flycheck to work with python files.  Haskell works with flycheck as long as haskell-ghc or haskell-stack-ghc is installed.  For more information on language support for flycheck, read this.
 #+begin_src emacs-lisp
@@ -1098,8 +1066,8 @@ Projectile is a project interaction library for Emacs.  It should be noted that 
   ;;                    :timeout nil)))
 
   ;; Привязка в evil-normal-state
-   (define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
-   (define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe)
+   ;; (define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
+   ;; (define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe)
   )
 
 
@@ -1251,14 +1219,6 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
             doom-themes-enable-italic t) ; if nil, italics is universally disabled
 )
 
-      (use-package doom-modeline
-        :ensure t
-        :init (doom-modeline-mode 1)
-	:config
-	(setq doom-modeline-height 30
-	      doom-modeline-bar-width 5
-	      doom-modeline-persp-name t
-	      doom-modeline-persp-icon t))
 
 
 #+end_src
