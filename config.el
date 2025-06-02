@@ -38,6 +38,10 @@
 ;; VPN enable
 (setq url-gateway-method 'socks)
 (setq socks-server '("Default server" "127.0.0.1" 8085 5))
+(add-hook 'emacs-startup-hook
+	  (lambda ()
+	    (defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
+	    ))
 
 (defun my/reload-config ()
   "Reload Emacs configuration safely."
@@ -58,6 +62,7 @@
 ;;  (let ((file (or buffer-file-name (error "Not visiting a file"))))
 ;;    (find-file (format "/sudo::%s" file))))
 
+(setq shell-file-name "/bin/bash")
 (defun my/sudo-edit (&optional arg)
   "Редактировать текущий файл или ARG с правами sudo через TRAMP."
   (interactive "P")
@@ -722,79 +727,17 @@ _l_ →                          _K_ увеличить высоту
 (setq org-edit-src-content-indentation 0)
 
 (require 'org-tempo)
+(with-eval-after-load 'org-tempo
+  (add-to-list 'org-structure-template-alist '("se" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("sp" . "src python"))
+  (add-to-list 'org-structure-template-alist '("sc" . "src c++"))
+  )
 
 (use-package projectile
   :ensure t
   :config
   (setq projectile-completion-system 'ivy)
   (projectile-mode 1))
-
-(use-package posframe
-  :ensure t)
-
-(with-eval-after-load 'posframe
-  (defvar my/doc-posframe-buffer "*doc-posframe*")
-
-  (defun my/hide-doc-posframe ()
-    "Скрыть всплывающее окно с документацией."
-    (interactive)
-    (posframe-hide-all))
-
-  (defun my/show-doc-posframe ()
-    "Показать документацию во всплывающем окне posframe."
-    (interactive)
-    (let* ((doc (or (and (fboundp 'eldoc--doc-buffer)
-			 (buffer-live-p (eldoc--doc-buffer))
-			 (with-current-buffer (eldoc--doc-buffer)
-                           (buffer-string)))
-                    (let ((sym (symbol-at-point)))
-                      (and sym (documentation sym)))
-                    "Нет документации.")))
-      (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
-	(let ((inhibit-read-only t))
-          (erase-buffer)
-          (insert doc)
-          (goto-char (point-min))
-          (read-only-mode 1))
-	(use-local-map (let ((map (make-sparse-keymap)))
-			 (define-key map (kbd "C-g") #'my/hide-doc-posframe)
-			 map)))
-      (posframe-show my/doc-posframe-buffer
-                     :string nil
-                     :position (point)
-                     :internal-border-width 10
-                     :border-width 1
-                     :background-color (face-background 'tooltip nil t)
-                     :accept-focus nil
-                     :timeout nil)))
-
-  ;; (defun my/show-doc-posframe ()
-  ;;   "Показать документацию во всплывающем окне posframe."
-  ;;   (interactive)
-  ;;   (let* ((sym (symbol-at-point))
-  ;;          (doc (or (and sym (documentation sym)) "Нет документации.")))
-  ;;     (with-current-buffer (get-buffer-create my/doc-posframe-buffer)
-  ;;       (let ((inhibit-read-only t))
-  ;;       (erase-buffer)
-  ;;       (insert doc)
-  ;;       (goto-char (point-min))
-  ;;       (read-only-mode 1))
-  ;;       (use-local-map (let ((map (make-sparse-keymap)))
-  ;;                        (define-key map (kbd "C-g") #'my/hide-doc-posframe)
-  ;;                        map)))
-  ;;     (posframe-show my/doc-posframe-buffer
-  ;;                    :string nil ;; nil — использовать содержимое буфера
-  ;;                    :position (point)
-  ;;                    :internal-border-width 10
-  ;;                    :border-width 1
-  ;;                    :background-color (face-background 'tooltip nil t)
-  ;;                    :accept-focus nil ;; без фокуса — иначе posframe зависнет
-  ;;                    :timeout nil)))
-
-  ;; Привязка в evil-normal-state
-   ;; (define-key evil-normal-state-map (kbd "K") #'my/show-doc-posframe)
-   ;; (define-key evil-normal-state-map (kbd "q") #'my/hide-doc-posframe)
-  )
 
 (use-package rainbow-delimiters
   :ensure t
@@ -829,7 +772,7 @@ _l_ →                          _K_ увеличить высоту
 (use-package vterm
 :ensure t
 :config
-(setq shell-file-name "/usr/bin/nu"
+(setq shell-file-name "/usr/bin/zsh"
       vterm-max-scrollback 5000))
 
 (use-package vterm-toggle

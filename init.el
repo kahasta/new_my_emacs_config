@@ -95,7 +95,6 @@
       `((".*" ,temporary-file-directory t)))
 
 
-(defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
 
 ;; Вызываем нашу функцию
 (my/load-org-config)

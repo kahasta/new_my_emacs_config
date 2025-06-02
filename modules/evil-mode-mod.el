@@ -23,6 +23,12 @@
   ;; (setq evil-collection-mode-list '(dashboard dired ibuffer eshell org))
   (evil-collection-init))
 
+(use-package evil-matchit
+  :ensure t
+  :after evil
+  :config
+  (global-evil-matchit-mode 1))
+
 (use-package evil-nerd-commenter
   :ensure t
   :after evil
