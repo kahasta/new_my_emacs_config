@@ -101,7 +101,13 @@
 
 
 ;; Указывает, что все резервные копии файлов (например, file~) будут сохраняться в директории, заданной temporary-file-directory(обычно/tmp/` или эквивалент), вместо текущей папки файла.
+(setq temporary-file-directory (expand-file-name "~/.my-emacs.d/backups/"))
+(unless (file-exists-p temporary-file-directory)
+  (make-directory temporary-file-directory t))
+
 (setq backup-directory-alist
       `((".*" . ,temporary-file-directory)))
-(setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
+(setq auto-save-file-name-transforms `((".*" ,(concat temporary-file-directory ".") t)))
+(setq auto-save-default t) ; Включаем автосейвы
+(setq auto-save-timeout 60) ; Сохранять каждые 5 секунд
+(setq auto-save-interval 300) ; Сохранять каждые 300 вводов
