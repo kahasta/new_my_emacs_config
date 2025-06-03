@@ -2,6 +2,7 @@
 #+DESCRIPTION: my personal emacs config
 #+STARTUP: showeverything
 #+OPTIONS: toc:2
+#+TOC: headlines 2
 
 * TABLE OF CONTENTS :toc:
 - [[#first-load][First load]]
@@ -31,6 +32,7 @@
 - [[#fonts][FONTS]]
   - [[#zooming-inout][Zooming In/Out]]
 - [[#format-all][FORMAT-ALL]]
+- [[#highlight-indent-guides][HIGHLIGHT-INDENT-GUIDES]]
 - [[#hydra][HYDRA]]
 - [[#ui-settings-and-tweaks][UI SETTINGS AND TWEAKS]]
   - [[#disable-menubar-toolbars-and-scrollbars][Disable Menubar, Toolbars and Scrollbars]]
@@ -753,6 +755,12 @@ Settings fonts.
     (org-edit-src-exit)))
 #+end_src
 
+* HIGHLIGHT-INDENT-GUIDES
+#+begin_src emacs-lisp
+(use-package highlight-indent-guides
+  :ensure t
+  :hook (prog-mode . highlight-indent-guides-mode))
+#+end_src
 * HYDRA
 #+begin_src emacs-lisp
 (use-package hydra
@@ -1265,6 +1273,7 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
   
 
 #+end_src
+
 * TREE-SITTER
 #+begin_src emacs-lisp
 

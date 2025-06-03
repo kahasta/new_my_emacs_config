@@ -575,6 +575,10 @@
     (indent-region (point-min) (point-max))
     (org-edit-src-exit)))
 
+(use-package highlight-indent-guides
+  :ensure t
+  :hook (prog-mode . highlight-indent-guides-mode))
+
 (use-package hydra
   :ensure t
   :config

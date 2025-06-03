@@ -39,9 +39,6 @@
   :init
   (all-the-icons-completion-mode 1))
 
-(use-package highlight-indent-guides
-  :ensure t
-  :hook (prog-mode . highlight-indent-guides-mode))
 
 (use-package vertico
   :init
