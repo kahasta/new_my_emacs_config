@@ -25,6 +25,8 @@
 	(condition-case err
             (progn
               (message "Tangling org file...")
+	      (message "Org file exists: %s" (file-exists-p org-file))
+	      (message "El file exists: %s, size: %d" (file-exists-p el-file) (file-attribute-size (file-attributes el-file)))
               (org-babel-tangle-file org-file el-file)
               (message "Successfully tangled: %s" el-file))
           (error
@@ -46,15 +48,19 @@
 	(message "Empty or missing elisp file: %s" el-file)))))
 
 
+
+;; Вызываем нашу функцию
+(my/load-org-config)
+
+
 ;; Process performance tuning
 
-(setq read-process-output-max (* 4 1024 1024))
-(setq process-adaptive-read-buffering nil)
 ;; performance
 
 ;; https://emacs-lsp.github.io/lsp-mode/page/performance/
 (setq gc-cons-threshold 100000000
-      read-process-output-max (* 1024 1024))
+      read-process-output-max (* 4 1024 1024)
+      process-adaptive-read-buffering nil)
 
 ;; https://www.masteringemacs.org/article/speed-up-emacs-libjansson-native-elisp-compilation
 (if (and (fboundp 'native-comp-available-p)
@@ -69,6 +75,11 @@
 ;; do not steal focus while doing async compilations
 (setq warning-suppress-types '((comp)))
 
+
+
+(setq custom-file (expand-file-name "~/.emacs.d/custom.el"))
+(when (file-exists-p custom-file)
+  (load custom-file))
 
 ;; options
 (setq-default
@@ -93,45 +104,3 @@
       `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
       `((".*" ,temporary-file-directory t)))
-
-
-
-;; Вызываем нашу функцию
-(my/load-org-config)
-
-
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-enabled-themes '(tango-dark))
- '(custom-safe-themes
-   '("9b21c848d09ba7df8af217438797336ac99cbbbc87a08dc879e9291673a6a631" default))
- '(elfeed-feeds
-   '("https://www.youtube.com/feeds/videos.xml?channel_id=UC0uTPqBCFIpZxlz_Lv1tk_g"
-     "https://www.youtube.com/feeds/videos.xml?channel_id=UCdKuE7a2QZeHPhDntXVZ91w"
-     "www.youtube.com"))
- '(package-selected-packages
-   '(ace-window aggressive-indent all-the-icons all-the-icons-ivy-rich cape
-		centaur-tabs company consult-eglot consult-yasnippet corfu
-		corfu-popupinfo corfu-prescient counsel dart-mode dash devil
-		diff-hl diminish dockerfile-mode doom-modeline embark-consult
-		emojify enhanced-evil-paredit evil evil-keypad expand-region
-		flycheck flycheck-eglot git git-gutter github hydra ivy-rich
-		kind-icon lua-mode magit marginalia orderless org-modern
-		prescient projectile rainbow-delimiters rainbow-mode rust-mode
-		smartparens smex tabnine tempel toc-org treemacs ultra-scroll
-		vertico-posframe vertico-prescient vundo xclip yaml-mode
-		yasnippet))
- '(package-vc-selected-packages
-   '((ultra-scroll :url "https://github.com/jdtsmith/ultra-scroll")))
- '(safe-local-variable-values '((eval setq elisp-flymake-byte-compile t))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-(put 'dired-find-alternate-file 'disabled nil)

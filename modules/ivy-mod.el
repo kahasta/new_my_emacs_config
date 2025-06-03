@@ -2,7 +2,6 @@
 ;;;  Ivy, a generic completion mechanism for Emacs.
 ;;;  Counsel, a collection of Ivy-enhanced versions of common Emacs commands.
 ;;;  Ivy-rich allows us to add descriptions alongside the commands in M-x.
-
 (progn
   (use-package ivy
     :ensure t
@@ -19,9 +18,8 @@
             ivy-rich-group-file))
     ;; Быстрые действия в ivy
     (setq ivy-read-action-function 'ivy-read-action-by-key)
-    (setq ivy-re-builders-alist
-	  '((t . ivy--regex-plus)))  ; Использовать умный regex
-
+    (setq ivy-fuzzy-match t)
+    (ivy-re-builders-alist '((t . ivy--regex-fuzzy)))  ; Fuzzy для всех
     ;; Показывать превью для файлов
     (setq ivy-extra-directories nil
           ivy-display-style 'fancy)
@@ -59,6 +57,12 @@
 				 'ivy-rich-switch-buffer-transformer)
     (message "Ivy-rich initialized"))  ; Для отладки
 
+  (use-package ivy-prescient
+    :ensure t
+    :after (ivy prescient)
+    :config
+    (ivy-prescient-mode 1)
+    (prescient-persist-mode 1))
 
   (use-package all-the-icons-ivy-rich
     :ensure t

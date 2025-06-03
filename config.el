@@ -7,11 +7,12 @@
 	  (lambda ()
 	    ;;; ---------- add to this your modules
 
-	     (require 'evil-mode-mod)
-;;	    (require 'meow-mod)
+	    (require 'evil-mode-mod)
+	   ;; (require 'meow-mod)
 	    ;; (require 'company-mod)
 	    (require 'eglot-mod)
 	    (require 'autocomplete-mod)
+	    ;; (require 'autocomplete-cvp-mod)
 	    (require 'ivy-mod)
 	    (require 'vertico-mod)
 	    (require 'treemacs-mod)
@@ -296,8 +297,6 @@
   :ensure t
   :bind (("C-c z" . #'avy-zap-to-char)
          ("C-c Z" . #'avy-zap-up-to-char)))
-
-(setq backup-directory-alist `(("." . ,(expand-file-name "backups/" user-emacs-directory))))
 
 (use-package yaml-mode 
   :ensure t
@@ -613,8 +612,8 @@ _l_ →                          _K_ увеличить высоту
   (defhydra my/hydra-jump-to-directory
     (:color amaranth)
     "Jump to directory"
-    ("p" (find-file "/home/kahasta/Projects") "Projects")
-    ("c" (find-file "/home/kahasta/.config") ".config")
+    ("p" (find-file "/home/kahasta/Projects") "Projects" :exit t)
+    ("c" (find-file "/home/kahasta/.config") ".config" :exit t)
     ("q" nil "Quit" :color blue))
   )
 

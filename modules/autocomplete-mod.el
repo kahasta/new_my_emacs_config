@@ -5,6 +5,7 @@
 	   (corfu-auto-delay 0)
 	   (corfu-auto-prefix 1)
 	   (corfu-echo-documentation 0.25)
+	   (corfu-enable-always-in-minibuffer nil)
 	   (corfu-cycle t)
 	   (corfu-on-exact-match nil)
 	   (tab-always-indent 'complete))
@@ -98,6 +99,11 @@
 
   :config
   ;; migemoでローマ字検索を有効にする
+  (defun orderless-ivy-dispatch (str)
+    (orderless-filter str (ivy--regex-ignore-order str)))
+  (setq ivy-re-builders-alist
+        '((counsel-M-x . orderless-ivy-dispatch)
+          (t . ivy--regex-fuzzy)))
   (with-eval-after-load 'migemo
     (defun orderless-migemo (component)
       (let ((pattern (downcase (migemo-get-pattern component))))
@@ -147,5 +153,10 @@
                         (cape-dabbrev))))))
 
 (add-hook 'org-mode-hook #'my/org-mode-corfu-setup)
+
+(with-eval-after-load 'corfu
+  (add-hook 'corfu-mode-hook
+	    (lambda ()
+	      (setq-local orderless-matching-styles '(orderless-flex)))))
 
 (provide 'autocomplete-mod)
