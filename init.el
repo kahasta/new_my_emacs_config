@@ -3,6 +3,7 @@
 (require 'ob-tangle)
 
 
+(defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
 
 (defconst my/config-dir "~/.my-emacs.d/")
 (defvar auto-complete-mode nil)

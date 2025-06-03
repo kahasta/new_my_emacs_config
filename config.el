@@ -39,10 +39,6 @@
 ;; VPN enable
 (setq url-gateway-method 'socks)
 (setq socks-server '("Default server" "127.0.0.1" 8085 5))
-(add-hook 'emacs-startup-hook
-	  (lambda ()
-	    (defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
-	    ))
 
 (defun my/reload-config ()
   "Reload Emacs configuration safely."
@@ -283,6 +279,10 @@
 
 (use-package avy
   :ensure t
+  :config
+  (general-define-key
+   :states '(normal visual)
+   "s" 'avy-goto-char-timer)
   :bind (:map prog-mode-map ("C-'" . #'avy-goto-line))
   :bind (:map org-mode-map ("C-'" . #'avy-goto-line))
   :bind (("C-c l" . #'avy-goto-line)

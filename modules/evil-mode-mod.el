@@ -29,6 +29,18 @@
   :config
   (global-evil-matchit-mode 1))
 
+(use-package evil-surround
+  :ensure t
+  :config
+  (global-evil-surround-mode 1))
+
+(use-package evil-org
+  :ensure t
+  :after org
+  :config
+  (add-hook 'org-mode-hook 'evil-org-mode)
+  (evil-org-set-key-theme '(navigation insert textobjects additional)))
+
 (use-package evil-nerd-commenter
   :ensure t
   :after evil
