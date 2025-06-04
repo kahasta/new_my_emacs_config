@@ -22,7 +22,6 @@
 - [[#dashboard][DASHBOARD]]
 - [[#dired][DIRED]]
 - [[#diminish][DIMINISH]]
-- [[#elfeed-tube][ELFEED-TUBE]]
 - [[#expand-region][EXPAND-REGION]]
 - [[#extension-emacs-utils][EXTENSION EMACS UTILS]]
 - [[#eldoc-box-helpful-embark][ELDOC-BOX HELPFUL EMBARK]]
@@ -49,6 +48,7 @@
   - [[#enabling-org-bullets][Enabling Org Bullets]]
   - [[#disable-electric-indent][Disable Electric Indent]]
   - [[#source-code-block-tag-expansion][Source Code Block Tag Expansion]]
+  - [[#org-options][Org options]]
 - [[#projectile][PROJECTILE]]
 - [[#rainbow-delimiters][RAINBOW DELIMITERS]]
 - [[#rainbow-mode][RAINBOW MODE]]
@@ -102,9 +102,9 @@
 	    ;; (require 'smart-mode-line-mod)
 	    ;; (require 'telephone-line-mod)
 	    ;; --- Mode Line mods end
-
 	    (require 'en-evil-paredit-mod)
 	    (require 'centaur-tabs-mod)
+	    ;; (require 'dirvish-mod)
 	    ))
 #+end_src
 
@@ -219,6 +219,7 @@
     "d d" '(dired :wk "Open dired")
     "d j" '(dired-jump :wk "Dired jump to current")
     "d v" '(peep-dired :wk "Peep dired toggle")
+    "d s" '(hydra-dired-quick-sort/body :wk "DIRED sort")
     ;; "d n" '(neotree-toggle :wk "Open directory in neotree")
     )
 
@@ -254,7 +255,10 @@
 	      :wk "Reload emacs config"))
   
   
-
+  (kahasta/leader-keys
+    "i" '(imenu :wk "Imenu")
+    )
+  
   (kahasta/leader-keys
     "l" '(:ignore t :wk "Lsp")
     "l f" '(format-all-buffer :wk "Formatting buffer")
@@ -497,27 +501,43 @@ Emacs Dashboard is an extensible startup screen showing you recent files, bookma
                                 ("mkv" . "mpv")
                                 ("mp4" . "mpv"))))
 
-(use-package peep-dired
-  :ensure t
-  :after dired
-  :hook (evil-normalize-keymaps . peep-dired-hook)
+;; Additional syntax highlighting for dired
+(use-package diredfl
+  :hook
+  ((dired-mode . diredfl-mode)
+   ;; highlight parent and directory preview as well
+   (dirvish-directory-view-mode . diredfl-mode))
   :config
-  (evil-define-key 'normal dired-mode-map
-    "h" 'dired-up-directory
-    "l" 'dired-open-file
-    "v" 'peep-dired)
-  
-  (evil-define-key 'normal peep-dired-mode-map
-    "j" 'peep-dired-next-file
-    "k" 'peep-dired-prev-file
-    "q" 'peep-dired-quit
-    "l" 'peep-dired-open-file)
-  ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
-  ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
-  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
-  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
-  (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
-  )
+  (set-face-attribute 'diredfl-dir-name nil :bold t))
+
+;; Use `nerd-icons' as Dirvish's icon backend
+(use-package nerd-icons)
+
+(use-package dired-quick-sort
+  :init
+  (dired-quick-sort-setup))
+
+  (use-package peep-dired
+    :ensure t
+    :after dired
+    :hook (evil-normalize-keymaps . peep-dired-hook)
+    :config
+    (evil-define-key 'normal dired-mode-map
+      "h" 'dired-up-directory
+      "l" 'dired-open-file
+      "v" 'peep-dired)
+    
+    (evil-define-key 'normal peep-dired-mode-map
+      "j" 'peep-dired-next-file
+      "k" 'peep-dired-prev-file
+      "q" 'peep-dired-quit
+      "l" 'peep-dired-open-file)
+    ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
+    ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
+    ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
+    ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
+    (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+    )
 
 
 
@@ -529,22 +549,6 @@ This package implements hiding or abbreviation of the modeline displays (lighter
 (use-package diminish :ensure t)
 #+end_src
 
-* ELFEED-TUBE
-#+begin_src emacs-lisp
-(use-package elfeed-tube
-  :ensure t
-  :after elfeed
-  :demand t
-  :config
-  (elfeed-tube-setup)
-  :bind (("C-x y" . elfeed)))
-
-(use-package elfeed-tube-mpv
-  :ensure t ;; or :straight t
-  :bind (:map elfeed-show-mode-map
-              ("C-c C-f" . elfeed-tube-mpv-follow-mode)
-              ("C-c C-w" . elfeed-tube-mpv-where)))
-#+end_src
 * EXPAND-REGION
 #+begin_src emacs-lisp
 (use-package expand-region
@@ -1001,6 +1005,10 @@ Org-tempo is not a separate package but a module within org that can be enabled.
   (add-to-list 'org-structure-template-alist '("sp" . "src python"))
   (add-to-list 'org-structure-template-alist '("sc" . "src c++"))
   )
+#+end_src
+** Org options
+#+begin_src emacs-lisp
+(setq org-imenu-depth 4) ; Показывать заголовки до 4-го уровня
 #+end_src
 
 * PROJECTILE

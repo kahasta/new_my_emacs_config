@@ -38,7 +38,7 @@
 
 
 (use-package corfu-popupinfo
-  :ensure t
+  :ensure nil
   :after corfu
   :hook (corfu-mode . corfu-popupinfo-mode)
   :config

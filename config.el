@@ -26,9 +26,9 @@
 	    ;; (require 'smart-mode-line-mod)
 	    ;; (require 'telephone-line-mod)
 	    ;; --- Mode Line mods end
-
 	    (require 'en-evil-paredit-mod)
 	    (require 'centaur-tabs-mod)
+	    ;; (require 'dirvish-mod)
 	    ))
 
 (setq visible-bell t)
@@ -122,6 +122,7 @@
     "d d" '(dired :wk "Open dired")
     "d j" '(dired-jump :wk "Dired jump to current")
     "d v" '(peep-dired :wk "Peep dired toggle")
+    "d s" '(hydra-dired-quick-sort/body :wk "DIRED sort")
     ;; "d n" '(neotree-toggle :wk "Open directory in neotree")
     )
 
@@ -157,7 +158,10 @@
 	      :wk "Reload emacs config"))
   
   
-
+  (kahasta/leader-keys
+    "i" '(imenu :wk "Imenu")
+    )
+  
   (kahasta/leader-keys
     "l" '(:ignore t :wk "Lsp")
     "l f" '(format-all-buffer :wk "Formatting buffer")
@@ -362,43 +366,45 @@
                                 ("mkv" . "mpv")
                                 ("mp4" . "mpv"))))
 
-(use-package peep-dired
-  :ensure t
-  :after dired
-  :hook (evil-normalize-keymaps . peep-dired-hook)
+;; Additional syntax highlighting for dired
+(use-package diredfl
+  :hook
+  ((dired-mode . diredfl-mode)
+   ;; highlight parent and directory preview as well
+   (dirvish-directory-view-mode . diredfl-mode))
   :config
-  (evil-define-key 'normal dired-mode-map
-    "h" 'dired-up-directory
-    "l" 'dired-open-file
-    "v" 'peep-dired)
-  
-  (evil-define-key 'normal peep-dired-mode-map
-    "j" 'peep-dired-next-file
-    "k" 'peep-dired-prev-file
-    "q" 'peep-dired-quit
-    "l" 'peep-dired-open-file)
-  ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
-  ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
-  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
-  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
-  (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
-  )
+  (set-face-attribute 'diredfl-dir-name nil :bold t))
+
+;; Use `nerd-icons' as Dirvish's icon backend
+(use-package nerd-icons)
+
+(use-package dired-quick-sort
+  :init
+  (dired-quick-sort-setup))
+
+  (use-package peep-dired
+    :ensure t
+    :after dired
+    :hook (evil-normalize-keymaps . peep-dired-hook)
+    :config
+    (evil-define-key 'normal dired-mode-map
+      "h" 'dired-up-directory
+      "l" 'dired-open-file
+      "v" 'peep-dired)
+    
+    (evil-define-key 'normal peep-dired-mode-map
+      "j" 'peep-dired-next-file
+      "k" 'peep-dired-prev-file
+      "q" 'peep-dired-quit
+      "l" 'peep-dired-open-file)
+    ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
+    ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
+    ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
+    ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
+    (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+    )
 
 (use-package diminish :ensure t)
-
-(use-package elfeed-tube
-  :ensure t
-  :after elfeed
-  :demand t
-  :config
-  (elfeed-tube-setup)
-  :bind (("C-x y" . elfeed)))
-
-(use-package elfeed-tube-mpv
-  :ensure t ;; or :straight t
-  :bind (:map elfeed-show-mode-map
-              ("C-c C-f" . elfeed-tube-mpv-follow-mode)
-              ("C-c C-w" . elfeed-tube-mpv-where)))
 
 (use-package expand-region
   :ensure t
@@ -735,6 +741,8 @@ _l_ →                          _K_ увеличить высоту
   (add-to-list 'org-structure-template-alist '("sp" . "src python"))
   (add-to-list 'org-structure-template-alist '("sc" . "src c++"))
   )
+
+(setq org-imenu-depth 4) ; Показывать заголовки до 4-го уровня
 
 (use-package projectile
   :ensure t
