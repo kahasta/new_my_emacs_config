@@ -78,7 +78,7 @@
 
 
 
-(setq custom-file (expand-file-name "~/.emacs.d/custom.el"))
+(setq custom-file (expand-file-name (concat my/config-dir "custom.el")))
 (when (file-exists-p custom-file)
   (load custom-file))
 
@@ -101,7 +101,7 @@
 
 
 ;; Указывает, что все резервные копии файлов (например, file~) будут сохраняться в директории, заданной temporary-file-directory(обычно/tmp/` или эквивалент), вместо текущей папки файла.
-(setq temporary-file-directory (expand-file-name "~/.my-emacs.d/backups/"))
+(setq temporary-file-directory (expand-file-name (concat my/config-dir "backups/")))
 (unless (file-exists-p temporary-file-directory)
   (make-directory temporary-file-directory t))
 
