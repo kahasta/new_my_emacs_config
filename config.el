@@ -1,4 +1,9 @@
+;;; Code:
+
 (add-to-list 'load-path (concat my/config-dir "modules/"))
+
+;;; Commentary:
+;; 
 
 (require 'elpaca-setup)
 ;; Убедимся, что use-package загружен перед использованием
@@ -33,7 +38,7 @@
 
 (setq visible-bell t)
 ;; Это дает скрол курсора не с самого низа или верха
-(setq scroll-conservatively 10 
+(setq scroll-conservatively 10
       scroll-margin 15)
 (winner-mode)
 ;; VPN enable
@@ -84,7 +89,7 @@
     "." '(find-file :wk "Find file")
     "f c" '((lambda () (interactive) (find-file (concat my/config-dir "config.org"))) :wk "Edit emacs config")
     "f r" '(counsel-recentf :wk "Find recent files")
-    "TAB TAB" '(my/toggle-comment :wk "Comment lines") 
+    "TAB TAB" '(my/toggle-comment :wk "Comment lines")
     )
 
   (kahasta/leader-keys
@@ -120,6 +125,7 @@
     "d" '(:ignore t :wk "Dired")
     ;; "d d" '(dirvish :wk "Open dirvish")
     "d d" '(dired :wk "Open dired")
+    "d f" '(dired-narrow :wk "Filter dired")
     "d j" '(dired-jump :wk "Dired jump to current")
     "d v" '(peep-dired :wk "Peep dired toggle")
     "d s" '(hydra-dired-quick-sort/body :wk "DIRED sort")
@@ -127,7 +133,7 @@
     )
 
   (kahasta/leader-keys
-    "e" '(:ignore t :wk "Evaluate")    
+    "e" '(:ignore t :wk "Evaluate")
     "e b" '(eval-buffer :wk "Evaluate elisp in buffer")
     "e d" '(eval-defun :wk "Evaluate defun containing or after point")
     "e e" '(eval-expression :wk "Evaluate and elisp expression")
@@ -227,8 +233,8 @@
     (global-set-key [remap other-window] 'ace-window))
   :config
   ;; Цвета для номеров окон
-  (set-face-attribute 'aw-leading-char-face nil 
-                      :foreground "red" 
+  (set-face-attribute 'aw-leading-char-face nil
+                      :foreground "red"
                       :height 2.0)
   
   ;; Минимальный размер окна для выбора
@@ -258,7 +264,7 @@
 (defun emacs-run-launcher ()
   "Create and select a frame called emacs-run-launcher which consists only of a minibuffer and has specific dimensions. Runs app-launcher-run-app on that frame, which is an emacs command that prompts you to select an app and open it in a dmenu like behaviour. Delete the frame after that command has exited"
   (interactive)
-  (with-selected-frame 
+  (with-selected-frame
       (make-frame '((name . "emacs-run-launcher")
                     (minibuffer . only)
                     (fullscreen . 0) ; no fullscreen
@@ -302,18 +308,18 @@
   :bind (("C-c z" . #'avy-zap-to-char)
          ("C-c Z" . #'avy-zap-up-to-char)))
 
-(use-package yaml-mode 
+(use-package yaml-mode
   :ensure t
   :defer t)
-(use-package dockerfile-mode 
+(use-package dockerfile-mode
   :ensure t
   :defer t)
-(use-package toml-mode 
+(use-package toml-mode
   :ensure t
   :defer t)
 (use-package dhall-mode
   :ensure t)
-(use-package terraform-mode 
+(use-package terraform-mode
   :ensure t
   :defer t)
 
@@ -328,7 +334,7 @@
 ;;       completion-ignore-case t)
 
 (use-package dashboard
-  :ensure t 
+  :ensure t
   :init
   (setq initial-buffer-choice 'dashboard-open)
   (setq dashboard-set-heading-icons t)
@@ -354,6 +360,14 @@
 ;;  *  Поддержка дополнительных операций, вроде запуска внешних программ.
 (add-hook 'dired-load-hook (function (lambda () (load "dired-x"))))
 
+(with-eval-after-load 'dired-x
+  (setq dired-omit-files
+	(concat dired-omit-files "\\|^\\..+$"))
+  (setq-default dired-dwim-target t)
+  (setq dired-listing-switches "-alh")
+  (setq dired-mouse-drag-files t)
+  )
+
 (use-package dired-open
   :ensure t
   :config
@@ -365,6 +379,9 @@
                                 ("png" . "sxiv")
                                 ("mkv" . "mpv")
                                 ("mp4" . "mpv"))))
+
+(use-package dired-hacks-utils)
+(use-package dired-narrow)
 
 ;; Additional syntax highlighting for dired
 (use-package diredfl
@@ -381,34 +398,40 @@
 (use-package dired-quick-sort
   :init
   (dired-quick-sort-setup))
+(with-eval-after-load 'evil
+(evil-define-key 'normal dired-mode-map (kbd "f") 'dired-narrow)
+(evil-define-key 'normal dired-mode-map (kbd "F") 'revert-buffer)
+(evil-define-key 'normal dired-mode-map (kbd ".") 'dired-omit-mode)
+(evil-define-key 'normal dired-mode-map (kbd "s") 'hydra-dired-quick-sort/body)
+)
 
-  (use-package peep-dired
-    :ensure t
-    :after dired
-    :hook (evil-normalize-keymaps . peep-dired-hook)
-    :config
-    (evil-define-key 'normal dired-mode-map
-      "h" 'dired-up-directory
-      "l" 'dired-open-file
-      "v" 'peep-dired)
-    
-    (evil-define-key 'normal peep-dired-mode-map
-      "j" 'peep-dired-next-file
-      "k" 'peep-dired-prev-file
-      "q" 'peep-dired-quit
-      "l" 'peep-dired-open-file)
-    ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
-    ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
-    ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
-    ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
-    (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
-    )
+(use-package peep-dired
+  :ensure t
+  :after dired
+  :hook (evil-normalize-keymaps . peep-dired-hook)
+  :config
+  (evil-define-key 'normal dired-mode-map
+    "h" 'dired-up-directory
+    "l" 'dired-open-file
+    "v" 'peep-dired)
+  
+  (evil-define-key 'normal peep-dired-mode-map
+    "j" 'peep-dired-next-file
+    "k" 'peep-dired-prev-file
+    "q" 'peep-dired-quit
+    "l" 'peep-dired-open-file)
+  ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
+  ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
+  (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  )
 
 (use-package diminish :ensure t)
 
 (use-package expand-region
   :ensure t
-  :bind 
+  :bind
   ("C-M-e" . er/contract-region)
   ("C-S-e" . er/expand-region)
   :config
@@ -513,7 +536,7 @@
 ;;   :hook ((emacs-lisp-mode . flymake-mode)))
 
 (defun my/setup-my-fonts ()
-  "Настройка шрифтов" 
+  "Настройка шрифтов"
   (interactive)
   (let ((font-size 15)  ; Размер по умолчанию
          (main-font "JetBrains Mono")
@@ -527,7 +550,7 @@
       ;; Основные настройки шрифтов
       (set-face-attribute 'default nil
                          :font main-font
-                         :height (* 10 font-size)  
+                         :height (* 10 font-size)
                          :weight 'medium)
       
       (set-face-attribute 'variable-pitch nil
@@ -539,16 +562,16 @@
                          :height (* 10 font-size))
       
       ;; Настройки для фреймов
-      (add-to-list 'initial-frame-alist 
+      (add-to-list 'initial-frame-alist
                   `(font . ,(format "%s-%d" main-font font-size)))
-      (add-to-list 'default-frame-alist 
+      (add-to-list 'default-frame-alist
                   `(font . ,(format "%s-%d" main-font font-size)))
       
       ;; Стили для комментариев и ключевых слов
-      (set-face-attribute 'font-lock-comment-face nil 
+      (set-face-attribute 'font-lock-comment-face nil
 			    :slant 'italic
 			    :font var-font)
-      (set-face-attribute 'font-lock-keyword-face nil 
+      (set-face-attribute 'font-lock-keyword-face nil
 			    :slant 'italic
 			    :font var-font)
       
@@ -600,8 +623,8 @@
 ^^^^^^^^------------------------------------------------------------------
 _h_ ←       _v_ вертикально     _H_ уменьшить ширину     _o_ другое окно
 _j_ ↓       _s_ горизонтально   _L_ увеличить ширину     _q_ выйти
-_k_ ↑       _d_ удалить окно    _J_ уменьшить высоту     
-_l_ →                          _K_ увеличить высоту      
+_k_ ↑       _d_ удалить окно    _J_ уменьшить высоту
+_l_ →                          _K_ увеличить высоту
 "
     ("h" windmove-left)
     ("j" windmove-down)
@@ -691,7 +714,7 @@ _l_ →                          _K_ увеличить высоту
    :states '(normal) ; Для normal-состояния Evil
    :keymaps 'dart-mode-map ; Только в org-mode
    :prefix "SPC m" ; Лидер-ключ SPC m
-   "" '(:ignore t :which-key "Mode functions") 
+   "" '(:ignore t :which-key "Mode functions")
    "s" '(flutter-run :wk "Flutter run")
    "r" '(flutter-hot-reload :wk "Flutter Hot reload")
    "R" '(flutter-hot-restart :wk "Flutter Hot restart")
@@ -758,7 +781,7 @@ _l_ →                          _K_ увеличить высоту
 
 (use-package rainbow-mode
   :ensure t
-  :hook 
+  :hook
   ((org-mode prog-mode) . rainbow-mode))
 
 (use-package eshell-syntax-highlighting
@@ -1022,7 +1045,7 @@ _l_ →                          _K_ увеличить высоту
   which-key-idle-delay 0.8
   which-key-max-description-length 25
   which-key-allow-imprecise-window-fit nil
-  which-key-separator " → " 
+  which-key-separator " → "
  ))
 
 (windmove-default-keybindings 'meta)

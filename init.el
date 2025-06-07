@@ -27,7 +27,9 @@
             (progn
               (message "Tangling org file...")
 	      (message "Org file exists: %s" (file-exists-p org-file))
-	      (message "El file exists: %s, size: %d" (file-exists-p el-file) (file-attribute-size (file-attributes el-file)))
+	      (message "El file exists: %s, size: %d" 
+                 (file-exists-p el-file) 
+                 (or (file-attribute-size (file-attributes el-file)) 0))
               (org-babel-tangle-file org-file el-file)
               (message "Successfully tangled: %s" el-file))
           (error

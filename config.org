@@ -1,3 +1,4 @@
+;;; config.org ---
 #+AUTHOR: kahasta
 #+DESCRIPTION: my personal emacs config
 #+STARTUP: showeverything
@@ -71,11 +72,17 @@
 * First load
 ** Adding the modules directory to path
 #+begin_src emacs-lisp
+;;; Code:
+
 (add-to-list 'load-path (concat my/config-dir "modules/"))
 #+end_src
 
 ** Plug modules
 #+begin_src emacs-lisp
+
+;;; Commentary:
+;; 
+
 (require 'elpaca-setup)
 ;; Убедимся, что use-package загружен перед использованием
 (elpaca elpaca-use-package (elpaca-use-package-mode))
@@ -112,7 +119,7 @@
 #+begin_src emacs-lisp
 (setq visible-bell t)
 ;; Это дает скрол курсора не с самого низа или верха
-(setq scroll-conservatively 10 
+(setq scroll-conservatively 10
       scroll-margin 15)
 (winner-mode)
 ;; VPN enable
@@ -140,7 +147,7 @@
   (if (region-active-p)
       (comment-or-uncomment-region (region-beginning) (region-end))
     (comment-or-uncomment-region (line-beginning-position) (line-end-position))))
-#+end_src 
+#+end_src
 
 *** My Sudo edit
 #+begin_src emacs-lisp
@@ -181,7 +188,7 @@
     "." '(find-file :wk "Find file")
     "f c" '((lambda () (interactive) (find-file (concat my/config-dir "config.org"))) :wk "Edit emacs config")
     "f r" '(counsel-recentf :wk "Find recent files")
-    "TAB TAB" '(my/toggle-comment :wk "Comment lines") 
+    "TAB TAB" '(my/toggle-comment :wk "Comment lines")
     )
 
   (kahasta/leader-keys
@@ -217,14 +224,15 @@
     "d" '(:ignore t :wk "Dired")
     ;; "d d" '(dirvish :wk "Open dirvish")
     "d d" '(dired :wk "Open dired")
+    ;; "d f" '(dired-narrow :wk "Filter dired")
     "d j" '(dired-jump :wk "Dired jump to current")
     "d v" '(peep-dired :wk "Peep dired toggle")
-    "d s" '(hydra-dired-quick-sort/body :wk "DIRED sort")
+    ;; "d s" '(hydra-dired-quick-sort/body :wk "DIRED sort")
     ;; "d n" '(neotree-toggle :wk "Open directory in neotree")
     )
 
   (kahasta/leader-keys
-    "e" '(:ignore t :wk "Evaluate")    
+    "e" '(:ignore t :wk "Evaluate")
     "e b" '(eval-buffer :wk "Evaluate elisp in buffer")
     "e d" '(eval-defun :wk "Evaluate defun containing or after point")
     "e e" '(eval-expression :wk "Evaluate and elisp expression")
@@ -328,8 +336,8 @@
     (global-set-key [remap other-window] 'ace-window))
   :config
   ;; Цвета для номеров окон
-  (set-face-attribute 'aw-leading-char-face nil 
-                      :foreground "red" 
+  (set-face-attribute 'aw-leading-char-face nil
+                      :foreground "red"
                       :height 2.0)
   
   ;; Минимальный размер окна для выбора
@@ -369,7 +377,7 @@ The app-launcher is a better run launcher since it reads the desktop application
 (defun emacs-run-launcher ()
   "Create and select a frame called emacs-run-launcher which consists only of a minibuffer and has specific dimensions. Runs app-launcher-run-app on that frame, which is an emacs command that prompts you to select an app and open it in a dmenu like behaviour. Delete the frame after that command has exited"
   (interactive)
-  (with-selected-frame 
+  (with-selected-frame
       (make-frame '((name . "emacs-run-launcher")
                     (minibuffer . only)
                     (fullscreen . 0) ; no fullscreen
@@ -424,18 +432,18 @@ The app-launcher is a better run launcher since it reads the desktop application
 
 * CONFIGURATION FOR FILES
 #+begin_src emacs-lisp
-(use-package yaml-mode 
+(use-package yaml-mode
   :ensure t
   :defer t)
-(use-package dockerfile-mode 
+(use-package dockerfile-mode
   :ensure t
   :defer t)
-(use-package toml-mode 
+(use-package toml-mode
   :ensure t
   :defer t)
 (use-package dhall-mode
   :ensure t)
-(use-package terraform-mode 
+(use-package terraform-mode
   :ensure t
   :defer t)
 #+end_src
@@ -459,7 +467,7 @@ The app-launcher is a better run launcher since it reads the desktop application
 Emacs Dashboard is an extensible startup screen showing you recent files, bookmarks, agenda items and an Emacs banner.
 #+begin_src emacs-lisp
 (use-package dashboard
-  :ensure t 
+  :ensure t
   :init
   (setq initial-buffer-choice 'dashboard-open)
   (setq dashboard-set-heading-icons t)
@@ -489,6 +497,14 @@ Emacs Dashboard is an extensible startup screen showing you recent files, bookma
 ;;  *  Поддержка дополнительных операций, вроде запуска внешних программ.
 (add-hook 'dired-load-hook (function (lambda () (load "dired-x"))))
 
+(with-eval-after-load 'dired-x
+  (setq dired-omit-files
+	(concat dired-omit-files "\\|^\\..+$"))
+  (setq-default dired-dwim-target t)
+  (setq dired-listing-switches "-alh")
+  (setq dired-mouse-drag-files t)
+  )
+
 (use-package dired-open
   :ensure t
   :config
@@ -500,6 +516,9 @@ Emacs Dashboard is an extensible startup screen showing you recent files, bookma
                                 ("png" . "sxiv")
                                 ("mkv" . "mpv")
                                 ("mp4" . "mpv"))))
+
+(use-package dired-hacks-utils)
+(use-package dired-narrow)
 
 ;; Additional syntax highlighting for dired
 (use-package diredfl
@@ -516,31 +535,34 @@ Emacs Dashboard is an extensible startup screen showing you recent files, bookma
 (use-package dired-quick-sort
   :init
   (dired-quick-sort-setup))
+(with-eval-after-load 'evil
+(evil-define-key 'normal dired-mode-map (kbd "f") 'dired-narrow)
+(evil-define-key 'normal dired-mode-map (kbd "F") 'revert-buffer)
+(evil-define-key 'normal dired-mode-map (kbd ".") 'dired-omit-mode)
+(evil-define-key 'normal dired-mode-map (kbd "s") 'hydra-dired-quick-sort/body)
+)
 
-  (use-package peep-dired
-    :ensure t
-    :after dired
-    :hook (evil-normalize-keymaps . peep-dired-hook)
-    :config
-    (evil-define-key 'normal dired-mode-map
-      "h" 'dired-up-directory
-      "l" 'dired-open-file
-      "v" 'peep-dired)
-    
-    (evil-define-key 'normal peep-dired-mode-map
-      "j" 'peep-dired-next-file
-      "k" 'peep-dired-prev-file
-      "q" 'peep-dired-quit
-      "l" 'peep-dired-open-file)
-    ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
-    ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
-    ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
-    ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
-    (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
-    )
-
-
-
+(use-package peep-dired
+  :ensure t
+  :after dired
+  :hook (evil-normalize-keymaps . peep-dired-hook)
+  :config
+  (evil-define-key 'normal dired-mode-map
+    "h" 'dired-up-directory
+    "l" 'dired-open-file
+    "v" 'peep-dired)
+  
+  (evil-define-key 'normal peep-dired-mode-map
+    "j" 'peep-dired-next-file
+    "k" 'peep-dired-prev-file
+    "q" 'peep-dired-quit
+    "l" 'peep-dired-open-file)
+  ;; (evil-define-key 'normal dired-mode-map (kbd "h") 'dired-up-directory)
+  ;; (evil-define-key 'normal dired-mode-map (kbd "l") 'dired-open-file) ; use dired-find-file instead if not using dired-open package
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "j") 'peep-dired-next-file)
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "k") 'peep-dired-prev-file)
+  (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  )
 #+end_src
 
 * DIMINISH
@@ -553,7 +575,7 @@ This package implements hiding or abbreviation of the modeline displays (lighter
 #+begin_src emacs-lisp
 (use-package expand-region
   :ensure t
-  :bind 
+  :bind
   ("C-M-e" . er/contract-region)
   ("C-S-e" . er/expand-region)
   :config
@@ -682,7 +704,7 @@ Settings fonts.
 #+begin_src emacs-lisp
 
   (defun my/setup-my-fonts ()
-    "Настройка шрифтов" 
+    "Настройка шрифтов"
     (interactive)
     (let ((font-size 15)  ; Размер по умолчанию
            (main-font "JetBrains Mono")
@@ -696,7 +718,7 @@ Settings fonts.
         ;; Основные настройки шрифтов
         (set-face-attribute 'default nil
                            :font main-font
-                           :height (* 10 font-size)  
+                           :height (* 10 font-size)
                            :weight 'medium)
         
         (set-face-attribute 'variable-pitch nil
@@ -708,16 +730,16 @@ Settings fonts.
                            :height (* 10 font-size))
         
         ;; Настройки для фреймов
-        (add-to-list 'initial-frame-alist 
+        (add-to-list 'initial-frame-alist
                     `(font . ,(format "%s-%d" main-font font-size)))
-        (add-to-list 'default-frame-alist 
+        (add-to-list 'default-frame-alist
                     `(font . ,(format "%s-%d" main-font font-size)))
         
         ;; Стили для комментариев и ключевых слов
-        (set-face-attribute 'font-lock-comment-face nil 
+        (set-face-attribute 'font-lock-comment-face nil
 			    :slant 'italic
 			    :font var-font)
-        (set-face-attribute 'font-lock-keyword-face nil 
+        (set-face-attribute 'font-lock-keyword-face nil
 			    :slant 'italic
 			    :font var-font)
         
@@ -782,8 +804,8 @@ Settings fonts.
 ^^^^^^^^------------------------------------------------------------------
 _h_ ←       _v_ вертикально     _H_ уменьшить ширину     _o_ другое окно
 _j_ ↓       _s_ горизонтально   _L_ увеличить ширину     _q_ выйти
-_k_ ↑       _d_ удалить окно    _J_ уменьшить высоту     
-_l_ →                          _K_ увеличить высоту      
+_k_ ↑       _d_ удалить окно    _J_ уменьшить высоту
+_l_ →                          _K_ увеличить высоту
 "
     ("h" windmove-left)
     ("j" windmove-down)
@@ -824,7 +846,7 @@ Enchance emacs ui.
   (global-display-line-numbers-mode 1)
   (column-number-mode 1)
   (global-visual-line-mode t)
-  (delete-selection-mode 1) 
+  (delete-selection-mode 1)
 #+end_src
 
 * LANGUAGE SUPPORT
@@ -896,7 +918,7 @@ Emacs has built-in programming language modes for Lisp, Scheme, DSSSL, Ada, ASM,
    :states '(normal) ; Для normal-состояния Evil
    :keymaps 'dart-mode-map ; Только в org-mode
    :prefix "SPC m" ; Лидер-ключ SPC m
-   "" '(:ignore t :which-key "Mode functions") 
+   "" '(:ignore t :which-key "Mode functions")
    "s" '(flutter-run :wk "Flutter run")
    "r" '(flutter-hot-reload :wk "Flutter Hot reload")
    "R" '(flutter-hot-restart :wk "Flutter Hot restart")
@@ -915,7 +937,7 @@ Emacs has built-in programming language modes for Lisp, Scheme, DSSSL, Ada, ASM,
 #         neo-window-width 35
 #         neo-window-fixed-size nil
 #         inhibit-compacting-font-caches t
-#         projectile-switch-project-action 'neotree-projectile-action) 
+#         projectile-switch-project-action 'neotree-projectile-action)
 #         ;; truncate long file names in neotree
 #         (add-hook 'neo-after-create-hook
 #            #'(lambda (_)
@@ -997,7 +1019,7 @@ Org-bullets gives us attractive bullets rather than asterisks.
 #+end_src
 
 ** Source Code Block Tag Expansion
-Org-tempo is not a separate package but a module within org that can be enabled.  Org-tempo allows for ‘<s’ followed by TAB to expand to a begin_src tag.  
+Org-tempo is not a separate package but a module within org that can be enabled.  Org-tempo allows for ‘<s’ followed by TAB to expand to a begin_src tag.
 #+begin_src emacs-lisp
 (require 'org-tempo)
 (with-eval-after-load 'org-tempo
@@ -1107,7 +1129,7 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
 #+begin_src emacs-lisp
   (use-package rainbow-mode
     :ensure t
-    :hook 
+    :hook
     ((org-mode prog-mode) . rainbow-mode))
 #+end_src
 
@@ -1184,7 +1206,7 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
   (sp-local-pair 'web-mode "<" ">"))
 #+end_src
 
-* SMOOTH-SCROLL 
+* SMOOTH-SCROLL
 #+begin_src emacs-lisp
 (use-package smooth-scroll
   :ensure t
@@ -1368,7 +1390,7 @@ vterm-toggle toggles between the vterm buffer and whatever buffer you are editin
 
 #+end_src
 * YASNIPPET
-YASnippet is a template system for Emacs. It allows you to type an abbreviation and automatically expand it into function templates. Bundled language templates include: C, C++, C#, Perl, Python, Ruby, SQL, LaTeX, HTML, CSS and more. The snippet syntax is inspired from TextMate's syntax, you can even import most TextMate templates to YASnippet. 
+YASnippet is a template system for Emacs. It allows you to type an abbreviation and automatically expand it into function templates. Bundled language templates include: C, C++, C#, Perl, Python, Ruby, SQL, LaTeX, HTML, CSS and more. The snippet syntax is inspired from TextMate's syntax, you can even import most TextMate templates to YASnippet.
 #+begin_src emacs-lisp
 (use-package yasnippet
   :ensure t         ; Install yasnippet if not already present
@@ -1422,8 +1444,8 @@ YASnippet is a template system for Emacs. It allows you to type an abbreviation 
   which-key-idle-delay 0.8
   which-key-max-description-length 25
   which-key-allow-imprecise-window-fit nil
-  which-key-separator " → " 
- )) 
+  which-key-separator " → "
+ ))
 #+end_src
 
 * WINDMOVE
@@ -1434,3 +1456,7 @@ YASnippet is a template system for Emacs. It allows you to type an abbreviation 
 (global-set-key (kbd "M-k") 'windmove-up)
 (global-set-key (kbd "M-l") 'windmove-right)
 #+end_src
+
+(provide 'config)
+
+;;; config.org ends here
