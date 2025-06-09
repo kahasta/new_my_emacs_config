@@ -125,10 +125,10 @@
     "d" '(:ignore t :wk "Dired")
     ;; "d d" '(dirvish :wk "Open dirvish")
     "d d" '(dired :wk "Open dired")
-    "d f" '(dired-narrow :wk "Filter dired")
+    ;; "d f" '(dired-narrow :wk "Filter dired")
     "d j" '(dired-jump :wk "Dired jump to current")
     "d v" '(peep-dired :wk "Peep dired toggle")
-    "d s" '(hydra-dired-quick-sort/body :wk "DIRED sort")
+    ;; "d s" '(hydra-dired-quick-sort/body :wk "DIRED sort")
     ;; "d n" '(neotree-toggle :wk "Open directory in neotree")
     )
 
@@ -659,6 +659,11 @@ _l_ →                          _K_ увеличить высоту
 (global-visual-line-mode t)
 (delete-selection-mode 1)
 
+(use-package android-mode
+  :ensure t
+  :config
+  (setq android-mode-sdk-dir "~/Android/Sdk"))
+
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
                '((c-mode c-ts-mode c++-mode c++-ts-mode) . ("ccls" "--init" "{\"compilationDatabaseDirectory\": \"build\"}"))))
@@ -667,6 +672,8 @@ _l_ →                          _K_ увеличить высоту
 (add-hook 'c-ts-mode-hook 'eglot-ensure)
 (add-hook 'c++-mode-hook 'eglot-ensure)
 (add-hook 'c++-ts-mode-hook 'eglot-ensure)
+
+;; (use-package kotlin-mode)
 
 (use-package lua-mode :ensure t)
 

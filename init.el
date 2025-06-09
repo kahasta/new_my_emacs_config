@@ -3,6 +3,30 @@
 (require 'ob-tangle)
 
 
+;; Process performance tuning
+
+;; performance
+
+;; https://emacs-lsp.github.io/lsp-mode/page/performance/
+(setq gc-cons-threshold 134217728
+      read-process-output-max (* 4 1024 1024)
+      gc-cons-percentage 1.0
+      process-adaptive-read-buffering nil)
+
+;; https://www.masteringemacs.org/article/speed-up-emacs-libjansson-native-elisp-compilation
+(if (and (fboundp 'native-comp-available-p)
+         (native-comp-available-p))
+    (setq comp-deferred-compilation t
+          package-native-compile t)
+  (message "Native complation is *not* available, lsp performance will suffer..."))
+
+(unless (functionp 'json-serialize)
+  (message "Native JSON is *not* available, lsp performance will suffer..."))
+
+;; do not steal focus while doing async compilations
+(setq warning-suppress-types '((comp)))
+
+
 (defalias 'yes-or-no-p 'y-or-n-p) ; don't make us spell "yes" or "no"
 
 (defconst my/config-dir "~/.my-emacs.d/")
@@ -27,9 +51,9 @@
             (progn
               (message "Tangling org file...")
 	      (message "Org file exists: %s" (file-exists-p org-file))
-	      (message "El file exists: %s, size: %d" 
-                 (file-exists-p el-file) 
-                 (or (file-attribute-size (file-attributes el-file)) 0))
+	      (message "El file exists: %s, size: %d"
+                       (file-exists-p el-file)
+                       (or (file-attribute-size (file-attributes el-file)) 0))
               (org-babel-tangle-file org-file el-file)
               (message "Successfully tangled: %s" el-file))
           (error
@@ -55,28 +79,6 @@
 ;; Вызываем нашу функцию
 (my/load-org-config)
 
-
-;; Process performance tuning
-
-;; performance
-
-;; https://emacs-lsp.github.io/lsp-mode/page/performance/
-(setq gc-cons-threshold 100000000
-      read-process-output-max (* 4 1024 1024)
-      process-adaptive-read-buffering nil)
-
-;; https://www.masteringemacs.org/article/speed-up-emacs-libjansson-native-elisp-compilation
-(if (and (fboundp 'native-comp-available-p)
-         (native-comp-available-p))
-    (setq comp-deferred-compilation t
-          package-native-compile t)
-  (message "Native complation is *not* available, lsp performance will suffer..."))
-
-(unless (functionp 'json-serialize)
-  (message "Native JSON is *not* available, lsp performance will suffer..."))
-
-;; do not steal focus while doing async compilations
-(setq warning-suppress-types '((comp)))
 
 
 

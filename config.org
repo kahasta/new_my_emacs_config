@@ -38,7 +38,9 @@
   - [[#disable-menubar-toolbars-and-scrollbars][Disable Menubar, Toolbars and Scrollbars]]
   - [[#display-line-nums-and-truncated-lines][Display Line Nums and Truncated Lines]]
 - [[#language-support][LANGUAGE SUPPORT]]
+  - [[#android-mode][android-mode]]
   - [[#cc][C/C++]]
+  - [[#kotlin][kotlin]]
   - [[#lua][lua]]
   - [[#rust][rust]]
   - [[#flutter][flutter]]
@@ -851,6 +853,13 @@ Enchance emacs ui.
 
 * LANGUAGE SUPPORT
 Emacs has built-in programming language modes for Lisp, Scheme, DSSSL, Ada, ASM, AWK, C, C++, Fortran, Icon, IDL (CORBA), IDLWAVE, Java, Javascript, M4, Makefiles, Metafont, Modula2, Object Pascal, Objective-C, Octave, Pascal, Perl, Pike, PostScript, Prolog, Python, Ruby, Simula, SQL, Tcl, Verilog, and VHDL.  Other languages will require you to install additional modes.
+** android-mode
+#+begin_src emacs-lisp
+(use-package android-mode
+  :ensure t
+  :config
+  (setq android-mode-sdk-dir "~/Android/Sdk"))
+#+end_src
 ** C/C++
 #+begin_src emacs-lisp
 (with-eval-after-load 'eglot
@@ -861,6 +870,11 @@ Emacs has built-in programming language modes for Lisp, Scheme, DSSSL, Ada, ASM,
 (add-hook 'c-ts-mode-hook 'eglot-ensure)
 (add-hook 'c++-mode-hook 'eglot-ensure)
 (add-hook 'c++-ts-mode-hook 'eglot-ensure)
+#+end_src
+
+** kotlin
+#+begin_src emacs-lisp
+;; (use-package kotlin-mode)
 #+end_src
 ** lua
 #+begin_src emacs-lisp

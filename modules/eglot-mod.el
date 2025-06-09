@@ -29,6 +29,7 @@
       (define-key eglot-mode-map (kbd "M-d") 'eldoc))
     (add-to-list 'eglot-server-programs
 		 '(rust-mode . ("rust-analyzer"))
+		 ;; '(kotlin-mode . ("kotlin-language-server"))
 		 '(dart-mode . ("dart" "`langauge-server" "--client-id=emacs.eglot")))
     ;; Оптимизации для Rust
     (setq eglot-ignored-server-capabilities
